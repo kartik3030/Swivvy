@@ -1,4 +1,5 @@
-##Swivvy
+**Swivvy**
+
 A Production-Ready Social Matching Application
 
 Swivvy is a full-stack social matching platform that allows users to discover profiles, form matches, and communicate through real-time chat.
