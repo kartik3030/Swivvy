@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
+import API_URL from "../api";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -34,7 +35,7 @@ const Login = () => {
         setError("");
 
         try {
-            const res = await fetch("http://localhost:3000/api/login", {
+            const res = await fetch(`${API_URL}/api/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -48,12 +49,8 @@ const Login = () => {
                 return;
             }
 
-            if (data.token) {
-                localStorage.setItem("token", data.token);
-            } else {
-                setError("No token received from server.");
-                return;
-            }
+            // ✅ Cookie is already set by backend
+            // ❌ Do NOT store token in localStorage
 
             setForm({ email: "", password: "" });
             navigate("/explore");
@@ -67,7 +64,6 @@ const Login = () => {
 
     return (
         <>
-
             <div className="bg-black text-white min-h-screen">
                 <Navbar />
 
@@ -80,14 +76,18 @@ const Login = () => {
                         <p className="mt-2">
                             Manage your Swivvy Account.{" "}
                             <Link to="/signup">
-                                <span className="text-blue-500 hover:text-blue-700">Not a user?</span>
+                                <span className="text-blue-500 hover:text-blue-700">
+                                    Not a user?
+                                </span>
                             </Link>
                         </p>
 
                         <form onSubmit={submit} className="mt-5">
                             {/* Email */}
                             <div className="mt-3">
-                                <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold ">Email</p>
+                                <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold ">
+                                    Email
+                                </p>
                                 <input
                                     type="email"
                                     placeholder="Joe@example.com"
@@ -100,7 +100,9 @@ const Login = () => {
 
                             {/* Password */}
                             <div className="mt-3">
-                                <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold ">Password</p>
+                                <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold ">
+                                    Password
+                                </p>
                                 <input
                                     type="password"
                                     placeholder="Password"
@@ -132,7 +134,11 @@ const Login = () => {
                             </div>
 
                             {/* Error Message */}
-                            {error && <p className="text-red-500 text-center mt-3">{error}</p>}
+                            {error && (
+                                <p className="text-red-500 text-center mt-3">
+                                    {error}
+                                </p>
+                            )}
 
                             {/* Login Button */}
                             <div className="mt-4 flex justify-center">
@@ -151,7 +157,6 @@ const Login = () => {
                     </div>
                 </main>
             </div>
-
         </>
     );
 };

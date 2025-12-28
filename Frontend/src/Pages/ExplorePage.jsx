@@ -3,61 +3,50 @@ import Aside from "../Components/Aside";
 import Navbar2 from "../Components/Navbar2";
 import SwipeCard from "../Components/SwipeCard";
 import Chat from "../Components/Chat";
-import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../api";
 
 const ExplorePage = () => {
     const navigate = useNavigate();
 
+    const [user, setUser] = useState(null);
     const [users, setUsers] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isSwiping, setIsSwiping] = useState(false);
     const [matchedUser, setMatchedUser] = useState(null);
 
+    /* ================= AUTH CHECK ================= */
+
+    useEffect(() => {
+        fetch(`${API_URL}/api/getUserData`, {
+            credentials: "include",
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(setUser)
+            .catch(() => navigate("/landing"));
+    }, [navigate]);
+
     /* ================= FETCH USERS ================= */
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const token = localStorage.getItem("token");
-                if (!token) return;
+        if (!user) return;
 
-                const res = await fetch("/api/getDatabaseData", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                if (!res.ok) {
-                    console.error("Failed to fetch users");
-                    return;
-                }
-
-                const data = await res.json();
+        fetch(`${API_URL}/api/getDatabaseData`, {
+            credentials: "include",
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error("Failed to fetch users");
+                return res.json();
+            })
+            .then((data) => {
                 setUsers(data);
                 setCurrentIndex(0);
-            } catch (err) {
-                console.error("Fetch users error:", err);
-            }
-        };
-
-        fetchUsers();
-    }, []);
-
-    /* ================= AUTO LOGOUT ================= */
-
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const decoded = jwtDecode(token);
-        const now = Date.now() / 1000;
-
-        if (decoded.exp < now) {
-            localStorage.removeItem("token");
-            navigate("/landing");
-        }
-    }, [navigate]);
+            })
+            .catch((err) => console.error("Fetch users error:", err));
+    }, [user]);
 
     const currentUser = users[currentIndex];
 
@@ -69,24 +58,18 @@ const ExplorePage = () => {
         setIsSwiping(true);
 
         try {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
-            const res = await fetch("/api/rightSwipe", {
+            const res = await fetch(`${API_URL}/api/rightSwipe`, {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     userOnFeed: currentUser._id,
                 }),
             });
 
-            if (!res.ok) {
-                console.error("Right swipe failed");
-                return;
-            }
+            if (!res.ok) return;
 
             const data = await res.json();
 
@@ -110,13 +93,11 @@ const ExplorePage = () => {
         setIsSwiping(true);
 
         try {
-            const token = localStorage.getItem("token");
-
-            await fetch("/api/leftSwipe", {
+            await fetch(`${API_URL}/api/leftSwipe`, {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     userOnFeed: currentUser._id,
@@ -142,7 +123,7 @@ const ExplorePage = () => {
         moveToNext();
     };
 
-
+    if (!user) return null;
 
     /* ================= RENDER ================= */
 

@@ -54,14 +54,14 @@ connectDB();
 
 const getUserFromToken = (req) => {
     try {
-        const token =
-            req.headers.authorization?.split(" ")[1] || req.cookies.token;
+        const token = req.cookies.token;
         if (!token) return null;
         return jwt.verify(token, process.env.JWT_SECRET);
     } catch {
         return null;
     }
 };
+
 
 
 /* ====================== SIGNUP ====================== */
@@ -115,7 +115,7 @@ app.post("/api/login", async (req, res) => {
         });
 
 
-        res.json({ token });
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ message: "Server error" });
     }
@@ -172,11 +172,7 @@ app.post(
 
 app.get("/api/getUserData", async (req, res) => {
     try {
-        let token = req.headers.authorization?.split(" ")[1];
-
-        if (!token && req.cookies.token) {
-            token = req.cookies.token;
-        }
+        let token = req.cookies.token;
 
         if (!token) {
             return res.status(401).json({ error: "No token provided" });
@@ -322,6 +318,36 @@ app.post("/api/getMessages", async (req, res) => {
     }
 });
 
+/* ====================== Logout ====================== */
+app.post("/api/logout", (req, res) => {
+    res.clearCookie("token", {
+        httpOnly: true,
+        sameSite: "none",
+        secure: process.env.NODE_ENV === "production",
+    });
+    res.json({ success: true });
+});
+
+/* ====================== Delete ====================== */
+
+app.delete("/api/deleteAccount", async (req, res) => {
+    const decoded = getUserFromToken(req);
+    if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+    await User.findByIdAndDelete(decoded.id);
+    await Message.deleteMany({
+        $or: [{ senderId: decoded.id }, { receiverId: decoded.id }],
+    });
+
+    res.clearCookie("token", {
+        httpOnly: true,
+        sameSite: "none",
+        secure: process.env.NODE_ENV === "production",
+    });
+
+    res.json({ success: true });
+});
+
 
 /* ====================== FRONTEND ====================== */
 
@@ -335,7 +361,7 @@ app.get(/^\/(?!api).*/, (_, res) =>
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL,
+        origin: allowedOrigins,
         credentials: true,
     },
 });

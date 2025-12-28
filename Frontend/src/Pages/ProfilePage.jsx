@@ -1,86 +1,53 @@
 import React, { useEffect, useState } from "react";
 import Navbar2 from "../Components/Navbar2";
 import { Link, useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import API_URL from "../api";
 
 const ProfilePage = () => {
     const [backendData, setBackendData] = useState(null);
     const [showConfirm, setShowConfirm] = useState(false);
     const navigate = useNavigate();
 
+    /* ================= AUTH + FETCH USER ================= */
+
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            navigate("/login");
-            return;
-        }
-
-        try {
-            const decoded = jwtDecode(token);
-            const currentTime = Date.now() / 1000;
-
-            if (decoded.exp < currentTime) {
-                handleLogout();
-                return;
-            }
-
-            fetchUserData(token);
-        } catch (err) {
-            console.error("Invalid token:", err);
-            localStorage.removeItem("token");
-            navigate("/login");
-        }
+        fetch(`${API_URL}/api/getUserData`, {
+            credentials: "include",
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(setBackendData)
+            .catch(() => navigate("/login"));
     }, [navigate]);
 
-    async function fetchUserData(token) {
-        try {
-            const res = await fetch("http://localhost:3000/api/getUserData", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                credentials: "include",
-            });
-
-            if (!res.ok) throw new Error("Failed to fetch user data");
-
-            const data = await res.json();
-            setBackendData(data);
-        } catch (err) {
-            console.error(err);
-        }
-    }
+    /* ================= LOGOUT ================= */
 
     const handleLogout = async () => {
         try {
-            await fetch("http://localhost:3000/api/logout", {
+            await fetch(`${API_URL}/api/logout`, {
+                method: "POST",
                 credentials: "include",
             });
         } catch (err) {
             console.warn("Logout failed:", err);
         } finally {
-            localStorage.removeItem("token");
             navigate("/login");
         }
     };
 
-    const handleConfirmDelete = async () => {
-        const token = localStorage.getItem("token");
+    /* ================= DELETE ACCOUNT ================= */
 
+    const handleConfirmDelete = async () => {
         try {
-            const res = await fetch(
-                "http://localhost:3000/api/deleteAccount",
-                {
-                    method: "DELETE",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                    credentials: "include",
-                }
-            );
+            const res = await fetch(`${API_URL}/api/deleteAccount`, {
+                method: "DELETE",
+                credentials: "include",
+            });
 
             if (!res.ok) throw new Error("Delete failed");
 
-            localStorage.removeItem("token");
             navigate("/");
         } catch (err) {
             console.error(err);
@@ -88,6 +55,10 @@ const ProfilePage = () => {
             setShowConfirm(false);
         }
     };
+
+    if (!backendData) return null;
+
+    /* ================= RENDER ================= */
 
     return (
         <div className="bg-black text-white min-h-screen">

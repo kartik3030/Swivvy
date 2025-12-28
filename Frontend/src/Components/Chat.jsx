@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket";
+import API_URL from "../api";
 
 /* =========================
    CHAT LIST
@@ -29,7 +29,11 @@ const ChatList = ({ matches, onSelect }) => {
                         onClick={() => onSelect(m)}
                         className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
                     >
-                        <img src={m.profilePhoto} className="w-12 h-12 rounded-full" />
+                        <img
+                            src={m.profilePhoto}
+                            className="w-12 h-12 rounded-full"
+                            alt=""
+                        />
                         <div>
                             <p className="font-semibold">{m.FName}</p>
                             <p className="text-sm text-white/60">Tap to chat</p>
@@ -66,7 +70,11 @@ const ChatWindow = ({
                 <button onClick={onBack}>
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
-                <img src={activeChat.profilePhoto} className="w-10 h-10 rounded-full" />
+                <img
+                    src={activeChat.profilePhoto}
+                    className="w-10 h-10 rounded-full"
+                    alt=""
+                />
                 <p className="font-bold">{activeChat.FName}</p>
             </div>
 
@@ -106,30 +114,47 @@ const ChatWindow = ({
 ========================= */
 
 const Chat = () => {
+    const [user, setUser] = useState(null);
     const [matches, setMatches] = useState([]);
     const [activeChat, setActiveChat] = useState(null);
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState("");
     const [roomId, setRoomId] = useState(null);
 
-    const { id: userId } = jwtDecode(localStorage.getItem("token"));
+    const userId = user?._id;
+
+    /* FETCH LOGGED-IN USER */
+    useEffect(() => {
+        fetch(`${API_URL}/api/getUserData`, {
+            credentials: "include",
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error();
+                return res.json();
+            })
+            .then(setUser)
+            .catch(() => { });
+    }, []);
 
     /* SOCKET */
     useEffect(() => {
+        if (!userId) return;
+
         socket.connect();
         socket.on("receive_message", (msg) =>
             setMessages((prev) => [...prev, msg])
         );
 
         return () => socket.disconnect();
-    }, []);
+    }, [userId]);
 
     /* FETCH MATCHES */
     useEffect(() => {
-        fetch("http://localhost:3000/api/getUserMatches", {
+        if (!userId) return;
+
+        fetch(`${API_URL}/api/getUserMatches`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId }),
+            credentials: "include",
         })
             .then((r) => r.json())
             .then(setMatches);
@@ -137,7 +162,7 @@ const Chat = () => {
 
     /* JOIN ROOM + LOAD HISTORY */
     useEffect(() => {
-        if (!activeChat) return;
+        if (!activeChat || !userId) return;
 
         const room =
             userId < activeChat._id
@@ -147,8 +172,9 @@ const Chat = () => {
         setRoomId(room);
         socket.emit("join_room", room);
 
-        fetch("http://localhost:3000/api/getMessages", {
+        fetch(`${API_URL}/api/getMessages`, {
             method: "POST",
+            credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ roomId: room }),
         })
@@ -156,7 +182,7 @@ const Chat = () => {
             .then(setMessages);
     }, [activeChat, userId]);
 
-    /* SEND MESSAGE (OPTIMISTIC UI) */
+    /* SEND MESSAGE */
     const sendChat = () => {
         if (!messageInput.trim() || !roomId) return;
 
@@ -179,6 +205,8 @@ const Chat = () => {
 
         setMessageInput("");
     };
+
+    if (!userId) return null;
 
     return activeChat ? (
         <ChatWindow
