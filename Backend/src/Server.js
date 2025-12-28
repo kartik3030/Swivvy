@@ -31,12 +31,20 @@ app.use(express.json());
 app.use(cookieParser());
 app.use("/uploads", express.static(uploadsDir));
 
+const allowedOrigins = ["http://localhost:5173"];
+
+if (process.env.CLIENT_URL) {
+    allowedOrigins.push(process.env.CLIENT_URL);
+}
+
+
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: allowedOrigins,
         credentials: true,
     })
 );
+
 
 /* ====================== DATABASE ====================== */
 
@@ -45,11 +53,16 @@ connectDB();
 /* ====================== AUTH UTILS ====================== */
 
 const getUserFromToken = (req) => {
-    const token =
-        req.headers.authorization?.split(" ")[1] || req.cookies.token;
-    if (!token) return null;
-    return jwt.verify(token, process.env.JWT_SECRET);
+    try {
+        const token =
+            req.headers.authorization?.split(" ")[1] || req.cookies.token;
+        if (!token) return null;
+        return jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+        return null;
+    }
 };
+
 
 /* ====================== SIGNUP ====================== */
 
@@ -97,9 +110,10 @@ app.post("/api/login", async (req, res) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            sameSite: "strict",
-            secure: false,
+            sameSite: "none",
+            secure: process.env.NODE_ENV === "production",
         });
+
 
         res.json({ token });
     } catch (err) {
@@ -116,31 +130,43 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-app.post("/api/editProfile", upload.single("profilePhoto"), async (req, res) => {
-    try {
-        const { FName, LName, bio, skills, email } = req.body;
+app.post(
+    "/api/editProfile",
+    upload.single("profilePhoto"),
+    async (req, res) => {
+        try {
+            // 🔐 AUTH
+            const decoded = getUserFromToken(req);
+            if (!decoded) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
 
-        const photo = req.file
-            ? `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`
-            : undefined;
+            const { FName, LName, bio, skills } = req.body;
 
-        const user = await User.findOneAndUpdate(
-            { email },
-            {
-                FName,
-                LName,
-                bio,
-                skills: Array.isArray(skills) ? skills : [skills],
-                ...(photo && { profilePhoto: photo }),
-            },
-            { new: true }
-        ).select("-password");
+            const photo = req.file
+                ? `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`
+                : undefined;
 
-        res.json(user);
-    } catch (err) {
-        res.status(500).json({ message: "Server error" });
+            const user = await User.findByIdAndUpdate(
+                decoded.id,
+                {
+                    FName,
+                    LName,
+                    bio,
+                    skills: Array.isArray(skills) ? skills : [skills],
+                    ...(photo && { profilePhoto: photo }),
+                },
+                { new: true }
+            ).select("-password");
+
+            res.json(user);
+        } catch (err) {
+            console.error("editProfile error:", err);
+            res.status(500).json({ message: "Server error" });
+        }
     }
-});
+);
+
 
 /* ====================== Get User who is currently on app ====================== */
 
@@ -156,7 +182,11 @@ app.get("/api/getUserData", async (req, res) => {
             return res.status(401).json({ error: "No token provided" });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = getUserFromToken(req);
+        if (!decoded) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
 
         const user = await User.findById(decoded.id).select("-password");
         if (!user) {
@@ -261,21 +291,37 @@ app.post("/api/leftSwipe", async (req, res) => {
 /* ====================== MATCHES ====================== */
 
 app.post("/api/getUserMatches", async (req, res) => {
-    const { userId } = req.body;
-    const user = await User.findById(userId).populate(
+    const decoded = getUserFromToken(req);
+    if (!decoded) return res.status(401).json({ error: "Unauthorized" });
+
+    const user = await User.findById(decoded.id).populate(
         "matches",
         "FName LName profilePhoto"
     );
+
     res.json(user.matches);
 });
+
 
 /* ====================== MESSAGES ====================== */
 
 app.post("/api/getMessages", async (req, res) => {
-    const { roomId } = req.body;
-    const messages = await Message.find({ roomId }).sort({ createdAt: 1 });
-    res.json(messages);
+    try {
+        const decoded = getUserFromToken(req);
+        if (!decoded) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const { roomId } = req.body;
+        const messages = await Message.find({ roomId }).sort({ createdAt: 1 });
+
+        res.json(messages);
+    } catch (err) {
+        console.error("getMessages error:", err);
+        res.status(500).json({ error: "Server error" });
+    }
 });
+
 
 /* ====================== FRONTEND ====================== */
 
@@ -288,8 +334,12 @@ app.get(/^\/(?!api).*/, (_, res) =>
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "http://localhost:5173", credentials: true },
+    cors: {
+        origin: process.env.CLIENT_URL,
+        credentials: true,
+    },
 });
+
 
 io.on("connection", (socket) => {
     socket.on("join_room", (room) => socket.join(room));
