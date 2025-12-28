@@ -1,65 +1,70 @@
-Swivvy 
-A Production-Ready Social Media Application
+Swivvy
+A Production-Ready Social Matching Application
 
-Swivvy is a full-stack social matching platform that enables users to discover profiles, create matches, and chat in real time.
-It is built with production-grade authentication, real-time communication, and clean architecture, following modern industry standards.
+Swivvy is a full-stack social matching platform that allows users to discover profiles, form matches, and communicate through real-time chat.
 
-This project demonstrates end-to-end ownership — frontend, backend, database design, authentication, and deployment readiness.
+It is built with production-grade authentication, real-time communication, and a clean, scalable architecture following modern industry standards.
 
-This is not a tutorial project — it reflects how real products are built.
+This project demonstrates end-to-end ownership, including frontend development, backend APIs, database design, authentication, and deployment readiness.
 
-✨ Core Features
-🔐 Authentication & Security
+This is not a tutorial or demo project. It reflects how real-world products are designed and built.
 
-Secure login & signup
+Core Features
+Authentication & Security
 
-HTTP-only cookie-based JWT
+Secure user signup and login
 
-Protected routes (frontend + backend)
+HTTP-only, cookie-based JWT authentication
 
-Logout & account deletion
+Protected routes on both frontend and backend
 
-👤 Profile Management
+Logout and account deletion
 
-Profile creation & editing
+Token validation on every request
 
-Bio, skills, country & profile photo upload
+Profile Management
 
-Server-side file handling (Multer)
+Profile creation and editing
 
-🔥 Swipe & Match System
+Bio, skills, country, and profile photo support
 
-Tinder-style swipe experience
+Server-side file uploads using Multer
+
+Secure profile updates with authentication checks
+
+Swipe & Match System
+
+Tinder-style swipe interaction
 
 No duplicate users in feed
 
-Mutual likes create matches
+Mutual likes result in matches
 
-Optimized MongoDB queries
+Optimized MongoDB queries for performance
 
-💬 Real-Time Messaging
+Real-Time Messaging
 
 One-to-one real-time chat using Socket.IO
 
-Room-based architecture
+Room-based messaging architecture
 
-Chat persistence with MongoDB
+Message persistence with MongoDB
 
-Optimistic UI updates
+Optimistic UI updates for smooth user experience
 
-🖼 Screenshots (Add Yours Here)
+Screenshots
 
-Replace these with actual screenshots once deployed
+Screenshots will be added after deployment.
 
-🔑 Authentication
+Authentication flow
 
-🧭 Swipe & Match
+Swipe and match interface
 
-💬 Real-Time Chat
+Real-time chat
 
-👤 Profile
+Profile management
 
-🛠 Tech Stack
+Tech Stack
 Frontend
 
 React (Vite)
@@ -76,17 +81,17 @@ Node.js
 
 Express.js
 
-MongoDB & Mongoose
+MongoDB with Mongoose
 
 Socket.IO
 
-JWT (cookie-based auth)
+JWT (HTTP-only cookies)
 
-Multer (file uploads)
+Multer for file uploads
 
-🧱 Architecture Overview
+Architecture Overview
 Client (React)
-   ↓ (cookies)
+   ↓ (HTTP-only cookies)
 Express API
    ↓
 MongoDB
@@ -94,15 +99,17 @@ MongoDB
 Socket.IO Server
 
 
-Frontend never reads JWT directly
+Key architectural decisions:
 
-Browser handles auth cookies securely
+Frontend never accesses JWT directly
 
-Backend validates token on every request
+Browser handles authentication cookies securely
 
-Single server serves both API + frontend build
+Backend validates authentication on every request
 
-📁 Project Structure
+Single server serves both API endpoints and frontend build
+
+Project Structure
 Swivvy/
 ├── Backend/
 │   ├── src/
@@ -122,25 +129,29 @@ Swivvy/
 ├── .gitignore
 └── README.md
 
-🔐 Authentication Flow (Production-Grade)
+Authentication Flow (Production-Grade)
 
 User logs in
 
-Backend issues JWT
+Backend issues a JWT
 
-JWT stored in HTTP-only cookie
+JWT is stored in an HTTP-only cookie
 
-Browser automatically sends cookie
+Browser automatically sends cookie with requests
 
-Backend verifies token per request
+Backend verifies token on each request
 
-Frontend stays token-agnostic
+Frontend remains token-agnostic
 
-✅ Prevents XSS
-✅ Safer than localStorage
-✅ Scales to real production apps
+Security benefits:
 
-⚙️ Environment Variables
+Prevents XSS attacks
+
+Safer than localStorage-based auth
+
+Suitable for real production environments
+
+Environment Variables
 Backend (Backend/.env)
 PORT=3000
 MONGO_URI=your_mongodb_uri
@@ -151,51 +162,53 @@ NODE_ENV=development
 Frontend (Frontend/.env)
 VITE_API_URL=http://localhost:3000
 
-▶️ Run Locally
-# Backend
+Running Locally
+Backend
 cd Backend
 npm install
 npm start
 
-# Frontend
+Frontend
 cd Frontend
 npm install
 npm run dev
 
-🚀 Production Build
+Production Build
 cd Frontend
 npm run build
 
 
-Backend automatically serves Frontend/dist.
+The backend automatically serves the Frontend/dist build in production.
 
-📌 Future Enhancements
+Future Enhancements
 
-Cloud image storage (S3 / Cloudinary)
+Cloud-based image storage (S3 or Cloudinary)
 
 Push notifications
 
-Online/offline indicators
+Online/offline presence indicators
 
-Group chats
+Group chat support
 
-Rate limiting & helmet security
+Rate limiting and enhanced security headers
 
-👨‍💻 Author
+Author
 
 Kartik
 Full-Stack Developer (MERN)
 
 Focused on building secure, scalable, production-ready web applications.
 
-⭐ Recruiter Note
+Recruiter Note
 
 This project demonstrates:
 
 Full-stack ownership
 
-Real authentication & sockets
+Secure authentication using cookies
 
-Clean, deployable architecture
+Real-time communication with Socket.IO
 
-If this repository were a startup MVP — it would ship.
+Clean, deployable system architecture
+
+If this repository were a startup MVP, it would be ready to ship.
