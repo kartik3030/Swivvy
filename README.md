@@ -56,6 +56,8 @@ Screenshots
 
 Screenshots will be added after deployment.
 
+Planned sections:
+
 Authentication flow
 
 Swipe and match interface
@@ -89,17 +91,7 @@ JWT (HTTP-only cookies)
 
 Multer for file uploads
 
-Architecture Overview
-Client (React)
-   ↓ (HTTP-only cookies)
-Express API
-   ↓
-MongoDB
-   ↓
-Socket.IO Server
-
-
-Key architectural decisions:
+Key Architectural Decisions
 
 Frontend never accesses JWT directly
 
@@ -108,26 +100,6 @@ Browser handles authentication cookies securely
 Backend validates authentication on every request
 
 Single server serves both API endpoints and frontend build
-
-Project Structure
-Swivvy/
-├── Backend/
-│   ├── src/
-│   │   ├── Database/
-│   │   ├── Models/
-│   │   └── Server.js
-│   └── uploads/        # gitignored
-│
-├── Frontend/
-│   ├── src/
-│   │   ├── Components/
-│   │   ├── Pages/
-│   │   ├── api.js
-│   │   └── socket.js
-│   └── dist/           # generated on build
-│
-├── .gitignore
-└── README.md
 
 Authentication Flow (Production-Grade)
 
@@ -143,11 +115,11 @@ Backend verifies token on each request
 
 Frontend remains token-agnostic
 
-Security benefits:
+Security Benefits
 
 Prevents XSS attacks
 
-Safer than localStorage-based auth
+Safer than localStorage-based authentication
 
 Suitable for real production environments
 
@@ -210,5 +182,3 @@ Secure authentication using cookies
 Real-time communication with Socket.IO
 
 Clean, deployable system architecture
-
-If this repository were a startup MVP, it would be ready to ship.
