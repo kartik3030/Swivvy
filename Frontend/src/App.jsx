@@ -17,36 +17,20 @@ const App = () => {
     <BrowserRouter>
       <Routes>
 
-        {/* Root route:
-            - Logged in → /explore
-            - Not logged in → Landing
-        */}
+        {/* Root decision route */}
         <Route path="/" element={<IsAuthN />} />
 
-        {/* Public routes */}
+        {/* Public */}
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected routes */}
-        <Route
-          path="/explore"
-          element={<ProtectedRoute element={ExplorePage} />}
-        />
-
-        <Route
-          path="/profile"
-          element={<ProtectedRoute element={ProfilePage} />}
-        />
-
-        <Route
-          path="/chatPage"
-          element={<ProtectedRoute element={ChatPage} />}
-        />
-
-        <Route
-          path="/editProfile"
-          element={<ProtectedRoute element={EditProfile} />}
-        />
+        {/* Protected wrapper */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/chatPage" element={<ChatPage />} />
+          <Route path="/editProfile" element={<EditProfile />} />
+        </Route>
 
       </Routes>
     </BrowserRouter>

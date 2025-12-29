@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from "react";
 import Navbar2 from "../Components/Navbar2";
-import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../api";
 
 const EditProfile = () => {
     const navigate = useNavigate();
 
-    // ===== States =====
     const [disable, setDisable] = useState(false);
     const [error, setError] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
-    const [decode, setDecode] = useState(null);
     const [backendData, setBackendData] = useState(null);
     const [showConfirm, setShowConfirm] = useState(false);
     const [preview, setPreview] = useState(null);
     const [newSkill, setNewSkill] = useState("");
+
     const [form, editForm] = useState({
         profilePhoto: null,
         FName: "",
@@ -24,88 +23,48 @@ const EditProfile = () => {
         skills: [],
     });
 
-    // ===== Normalize backend skills =====
+    /* ===== Normalize backend skills ===== */
     const normalizeSkills = (value) => {
         if (!value) return [];
         if (Array.isArray(value)) return value;
-        if (typeof value === "string") return value.split(",").map((s) => s.trim());
+        if (typeof value === "string")
+            return value.split(",").map((s) => s.trim());
         return [];
     };
 
-    // ===== Verify Token & Fetch User =====
+    /* ===== Fetch logged-in user ===== */
     useEffect(() => {
-        const verifyAndFetch = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) return navigate("/landing");
+        fetch(`${API_URL}/api/getUserData`, {
+            credentials: "include",
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error("Unauthorized");
+                return res.json();
+            })
+            .then((data) => {
+                setBackendData(data);
 
-            try {
-                const decoded = jwtDecode(token);
-                const now = Date.now() / 1000;
-
-                if (decoded.exp < now) {
-                    await fetch("http://localhost:3000/logout", {
-                        method: "GET",
-                        credentials: "include",
-                    });
-                    localStorage.removeItem("token");
-                    return navigate("/landing");
-                }
-
-                setDecode(decoded);
-
-                editForm((prev) => ({
-                    ...prev,
-                    email: decoded.email || prev.email,
-                }));
-
-                fetchDataFromBackend(token);
-            } catch (err) {
-                localStorage.removeItem("token");
-                navigate("/landing");
-            }
-        };
-
-        verifyAndFetch();
+                editForm({
+                    profilePhoto: null,
+                    FName: data.FName || "",
+                    LName: data.LName || "",
+                    email: data.email || "",
+                    bio: data.bio || "",
+                    skills: normalizeSkills(data.skills),
+                });
+            })
+            .catch(() => {
+                navigate("/");
+            });
     }, [navigate]);
 
-    // ===== Fetch user data =====
-    async function fetchDataFromBackend(token) {
-        try {
-            const res = await fetch("http://localhost:3000/api/getUserData", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                credentials: "include",
-            });
-
-            if (!res.ok) throw new Error("Failed to fetch user data");
-
-            const data = await res.json();
-            setBackendData(data);
-
-            editForm((prev) => ({
-                ...prev,
-                profilePhoto: null,
-                FName: data.FName || "",
-                LName: data.LName || "",
-                email: data.email || prev.email,
-                bio: data.bio || "",
-                skills: normalizeSkills(data.skills),
-            }));
-        } catch (err) {
-            console.error("Error fetching data:", err);
-        }
-    }
-
-    // ===== Input change =====
+    /* ===== Input change ===== */
     function onChange(e) {
         const { name, value } = e.target;
         editForm((prev) => ({ ...prev, [name]: value }));
     }
 
-    // ===== Add Skill =====
+    /* ===== Add Skill ===== */
     function addNewSkill() {
         const trim = newSkill.trim();
         if (!trim) return;
@@ -122,7 +81,7 @@ const EditProfile = () => {
         setNewSkill("");
     }
 
-    // ===== Remove Skill =====
+    /* ===== Remove Skill ===== */
     function removeSkill(skill) {
         editForm((prev) => ({
             ...prev,
@@ -130,7 +89,7 @@ const EditProfile = () => {
         }));
     }
 
-    // ===== Submit =====
+    /* ===== Submit ===== */
     async function submit(e) {
         e.preventDefault();
 
@@ -144,21 +103,20 @@ const EditProfile = () => {
         setSuccessMsg("");
 
         try {
-            const token = localStorage.getItem("token");
             const formData = new FormData();
 
             formData.append("FName", form.FName);
             formData.append("LName", form.LName);
             formData.append("bio", form.bio);
-            form.skills.forEach((s) => formData.append("skills[]", s));
+            form.skills.forEach((s) => formData.append("skills", s));
             formData.append("email", form.email);
 
             if (form.profilePhoto)
                 formData.append("profilePhoto", form.profilePhoto);
 
-            const res = await fetch("http://localhost:3000/api/editProfile", {
+            const res = await fetch(`${API_URL}/api/editProfile`, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
+                credentials: "include",
                 body: formData,
             });
 
@@ -168,25 +126,24 @@ const EditProfile = () => {
                 setError(result.message || "Failed to update profile");
             } else {
                 setSuccessMsg("Profile updated successfully!");
-                fetchDataFromBackend(token);
+                setBackendData(result);
                 setPreview(null);
             }
-        } catch (err) {
+        } catch {
             setError("Something went wrong while saving");
         } finally {
             setDisable(false);
         }
     }
 
-    // ===== File Preview =====
+    /* ===== File Preview ===== */
     const handleFileChange = (e) => {
         const file = e.target.files?.[0] || null;
-
         editForm((prev) => ({ ...prev, profilePhoto: file }));
         setPreview(file ? URL.createObjectURL(file) : null);
     };
 
-    // ===== Discard =====
+    /* ===== Discard ===== */
     const handleDiscard = () => {
         if (backendData) {
             editForm({
@@ -195,7 +152,7 @@ const EditProfile = () => {
                 LName: backendData.LName || "",
                 bio: backendData.bio || "",
                 skills: normalizeSkills(backendData.skills),
-                email: backendData.email || decode?.email || "",
+                email: backendData.email || "",
             });
         }
 
@@ -205,12 +162,13 @@ const EditProfile = () => {
         setSuccessMsg("");
     };
 
-    if (!decode)
+    if (!backendData) {
         return (
             <div className="flex justify-center items-center h-screen text-white">
                 <h1>Loading...</h1>
             </div>
         );
+    }
 
     return (
         <div className="bg-black text-white">
@@ -220,20 +178,19 @@ const EditProfile = () => {
 
             <main className="flex justify-center pt-5">
                 <div>
-
                     {/* Profile Header */}
                     <div className="flex justify-center">
                         <div className="border-2 rounded-[10px] w-full sm:w-150 border-white/10 bg-white/5 backdrop-blur-md shadow-lg p-3">
                             <div className="flex justify-center ml-5 mr-5">
                                 <img
-                                    src={preview || backendData?.profilePhoto}
+                                    src={preview || backendData.profilePhoto}
                                     alt="Profile"
                                     className="max-h-60 sm:max-h-80 min-h-60 sm:min-h-80 rounded-[10px] object-cover"
                                 />
                             </div>
 
                             <p className="font-extrabold sm:text-2xl ml-5 mt-2">
-                                {backendData?.FName || decode?.FName}
+                                {backendData.FName}
                             </p>
 
                             <div className="flex gap-x-3 mt-1 text-gray-400 ml-5">
@@ -242,27 +199,18 @@ const EditProfile = () => {
                                     {form.email}
                                 </p>
                                 <p className="flex items-center gap-x-1">
-                                    <span className="material-symbols-outlined">location_on</span>
-                                    {backendData?.country || "India"}
+                                    <span className="material-symbols-outlined">
+                                        location_on
+                                    </span>
+                                    {backendData.country || "India"}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Section Header */}
-                    <div className="mt-7 text-2xl font-extrabold flex justify-center sm:justify-start">
-                        <p className="flex items-center gap-x-2">
-                            <span className="material-symbols-outlined">account_box</span>
-                            <span className="bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent">
-                                Profile & Skills
-                            </span>
-                        </p>
-                    </div>
-
                     {/* Form */}
                     <div className="mt-5 border-2 rounded-[10px] w-full sm:w-150 border-white/10 bg-white/5 backdrop-blur-md shadow-lg p-3 mb-10">
                         <form onSubmit={submit}>
-
                             {/* Profile Photo */}
                             <div className="flex justify-between items-center mt-5 px-3">
                                 <p className="font-bold">Profile Photo</p>
@@ -391,7 +339,9 @@ const EditProfile = () => {
                             {showConfirm && (
                                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
                                     <div className="bg-black/70 p-5 rounded-md shadow-lg text-center w-[300px] text-white">
-                                        <p className="font-semibold mb-4">Discard changes?</p>
+                                        <p className="font-semibold mb-4">
+                                            Discard changes?
+                                        </p>
                                         <div className="flex justify-center gap-4">
                                             <button
                                                 type="button"
@@ -411,7 +361,6 @@ const EditProfile = () => {
                                     </div>
                                 </div>
                             )}
-
                         </form>
                     </div>
                 </div>

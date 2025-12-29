@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Navbar2 from "../Components/Navbar2";
 import { Link, useNavigate } from "react-router-dom";
 import API_URL from "../api";
@@ -6,25 +6,46 @@ import API_URL from "../api";
 const ProfilePage = () => {
     const [backendData, setBackendData] = useState(null);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [loading, setLoading] = useState(true);
+
     const navigate = useNavigate();
+
+    const abortRef = useRef(null);
+    const actionLock = useRef(false);
 
     /* ================= AUTH + FETCH USER ================= */
 
     useEffect(() => {
+        abortRef.current = new AbortController();
+
         fetch(`${API_URL}/api/getUserData`, {
             credentials: "include",
+            signal: abortRef.current.signal,
         })
             .then((res) => {
-                if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error("Auth failed");
                 return res.json();
             })
-            .then(setBackendData)
-            .catch(() => navigate("/login"));
+            .then((data) => {
+                setBackendData(data);
+                setLoading(false);
+            })
+            .catch((err) => {
+                if (err.name !== "AbortError") {
+                    console.error("Profile fetch error:", err);
+                    navigate("/login");
+                }
+            });
+
+        return () => abortRef.current?.abort();
     }, [navigate]);
 
     /* ================= LOGOUT ================= */
 
     const handleLogout = async () => {
+        if (actionLock.current) return;
+        actionLock.current = true;
+
         try {
             await fetch(`${API_URL}/api/logout`, {
                 method: "POST",
@@ -40,6 +61,9 @@ const ProfilePage = () => {
     /* ================= DELETE ACCOUNT ================= */
 
     const handleConfirmDelete = async () => {
+        if (actionLock.current) return;
+        actionLock.current = true;
+
         try {
             const res = await fetch(`${API_URL}/api/deleteAccount`, {
                 method: "DELETE",
@@ -50,12 +74,13 @@ const ProfilePage = () => {
 
             navigate("/");
         } catch (err) {
-            console.error(err);
+            console.error("Delete account error:", err);
         } finally {
             setShowConfirm(false);
         }
     };
 
+    if (loading) return null;
     if (!backendData) return null;
 
     /* ================= RENDER ================= */

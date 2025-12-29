@@ -87,7 +87,7 @@ const ChatWindow = ({
                             : "mr-auto bg-white/10"
                             }`}
                     >
-                        {msg.message}
+                        {msg.text}
                     </div>
                 ))}
                 <div ref={bottomRef} />
@@ -129,23 +129,27 @@ const Chat = () => {
             credentials: "include",
         })
             .then((res) => {
-                if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error("Unauthorized");
                 return res.json();
             })
             .then(setUser)
-            .catch(() => { });
+            .catch(() => setUser(null));
     }, []);
 
-    /* SOCKET */
+    /* SOCKET LISTENER */
     useEffect(() => {
         if (!userId) return;
 
-        socket.connect();
-        socket.on("receive_message", (msg) =>
-            setMessages((prev) => [...prev, msg])
-        );
+        const handler = (msg) => {
+            setMessages((prev) => [...prev, msg]);
+        };
 
-        return () => socket.disconnect();
+        socket.on("receive_message", handler);
+
+        return () => {
+            socket.off("receive_message", handler);
+            socket.disconnect();
+        };
     }, [userId]);
 
     /* FETCH MATCHES */
@@ -191,7 +195,7 @@ const Chat = () => {
             roomId,
             senderId: userId,
             receiverId: activeChat._id,
-            message: messageInput,
+            text: messageInput,
         };
 
         setMessages((prev) => [...prev, tempMessage]);
@@ -200,7 +204,7 @@ const Chat = () => {
             roomId,
             senderId: userId,
             receiverId: activeChat._id,
-            message: messageInput,
+            text: messageInput,
         });
 
         setMessageInput("");

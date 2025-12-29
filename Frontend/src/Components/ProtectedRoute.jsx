@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import API_URL from "../api";
 
@@ -7,28 +7,31 @@ const ProtectedRoute = ({ element: Component }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
+        let mounted = true;
+
         fetch(`${API_URL}/api/getUserData`, {
             credentials: "include",
         })
             .then((res) => {
-                if (res.ok) {
-                    setIsAuthenticated(true);
-                } else {
-                    setIsAuthenticated(false);
-                }
+                if (mounted) setIsAuthenticated(res.ok);
             })
-            .catch(() => setIsAuthenticated(false))
-            .finally(() => setChecking(false));
+            .catch(() => {
+                if (mounted) setIsAuthenticated(false);
+            })
+            .finally(() => {
+                if (mounted) setChecking(false);
+            });
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
-    // Prevent redirect flicker
     if (checking) return null;
 
-    return isAuthenticated ? (
-        <Component />
-    ) : (
-        <Navigate to="/landing" replace />
-    );
+    if (!Component) return <Navigate to="/" replace />;
+
+    return isAuthenticated ? <Component /> : <Navigate to="/" replace />;
 };
 
 export default ProtectedRoute;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Aside from "../Components/Aside";
 import Navbar2 from "../Components/Navbar2";
 import SwipeCard from "../Components/SwipeCard";
@@ -14,6 +14,9 @@ const ExplorePage = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isSwiping, setIsSwiping] = useState(false);
     const [matchedUser, setMatchedUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const swipeLock = useRef(false);
 
     /* ================= AUTH CHECK ================= */
 
@@ -22,11 +25,17 @@ const ExplorePage = () => {
             credentials: "include",
         })
             .then((res) => {
-                if (!res.ok) throw new Error();
+                if (!res.ok) throw new Error("Auth failed");
                 return res.json();
             })
-            .then(setUser)
-            .catch(() => navigate("/landing"));
+            .then((data) => {
+                setUser(data);
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Auth error:", err);
+                navigate("/landing");
+            });
     }, [navigate]);
 
     /* ================= FETCH USERS ================= */
@@ -42,19 +51,37 @@ const ExplorePage = () => {
                 return res.json();
             })
             .then((data) => {
-                setUsers(data);
+                setUsers(Array.isArray(data) ? data : []);
                 setCurrentIndex(0);
             })
             .catch((err) => console.error("Fetch users error:", err));
     }, [user]);
 
-    const currentUser = users[currentIndex];
+    const currentUser =
+        users.length > 0 && currentIndex < users.length
+            ? users[currentIndex]
+            : null;
+
+    /* ================= HELPERS ================= */
+
+    const moveToNext = () => {
+        setCurrentIndex((prev) => {
+            if (prev + 1 >= users.length) return prev;
+            return prev + 1;
+        });
+    };
+
+    const closeMatch = () => {
+        setMatchedUser(null);
+        moveToNext();
+    };
 
     /* ================= RIGHT SWIPE ================= */
 
     const handleRightSwipe = async () => {
-        if (!currentUser || isSwiping) return;
+        if (!currentUser || swipeLock.current) return;
 
+        swipeLock.current = true;
         setIsSwiping(true);
 
         try {
@@ -69,11 +96,11 @@ const ExplorePage = () => {
                 }),
             });
 
-            if (!res.ok) return;
+            if (!res.ok) throw new Error("Right swipe failed");
 
             const data = await res.json();
 
-            if (data.match) {
+            if (data?.match) {
                 setMatchedUser(currentUser);
             } else {
                 moveToNext();
@@ -81,6 +108,7 @@ const ExplorePage = () => {
         } catch (err) {
             console.error("Right swipe error:", err);
         } finally {
+            swipeLock.current = false;
             setIsSwiping(false);
         }
     };
@@ -88,12 +116,13 @@ const ExplorePage = () => {
     /* ================= LEFT SWIPE ================= */
 
     const handleLeftSwipe = async () => {
-        if (!currentUser || isSwiping) return;
+        if (!currentUser || swipeLock.current) return;
 
+        swipeLock.current = true;
         setIsSwiping(true);
 
         try {
-            await fetch(`${API_URL}/api/leftSwipe`, {
+            const res = await fetch(`${API_URL}/api/leftSwipe`, {
                 method: "POST",
                 credentials: "include",
                 headers: {
@@ -104,26 +133,18 @@ const ExplorePage = () => {
                 }),
             });
 
+            if (!res.ok) throw new Error("Left swipe failed");
+
             moveToNext();
         } catch (err) {
             console.error("Left swipe error:", err);
         } finally {
+            swipeLock.current = false;
             setIsSwiping(false);
         }
     };
 
-    /* ================= HELPERS ================= */
-
-    const moveToNext = () => {
-        setCurrentIndex((prev) => prev + 1);
-    };
-
-    const closeMatch = () => {
-        setMatchedUser(null);
-        moveToNext();
-    };
-
-    if (!user) return null;
+    if (loading) return null;
 
     /* ================= RENDER ================= */
 
@@ -155,6 +176,7 @@ const ExplorePage = () => {
                             {/* Reject */}
                             <button
                                 onClick={handleLeftSwipe}
+                                disabled={!currentUser || isSwiping}
                                 className="flex items-center justify-center w-20 h-20 p-3 border-2 border-red-900 rounded-full"
                             >
                                 <svg
@@ -171,6 +193,7 @@ const ExplorePage = () => {
                             {/* Accept */}
                             <button
                                 onClick={handleRightSwipe}
+                                disabled={!currentUser || isSwiping}
                                 className="flex items-center justify-center w-20 h-20 p-3 border-2 border-green-700 rounded-full"
                             >
                                 <svg
