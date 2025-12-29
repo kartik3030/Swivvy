@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
@@ -9,80 +10,49 @@ const path = require("path");
 const fs = require("fs");
 const http = require("http");
 const { Server } = require("socket.io");
-require("dotenv").config();
 
-/* ====================== APP ====================== */
+const User = require("./models/User");
+const Message = require("./models/Message");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CLIENT_URL = process.env.CLIENT_URL;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 const isProd = process.env.NODE_ENV === "production";
 
-/* ====================== MIDDLEWARE ====================== */
+/* ================= BASIC MIDDLEWARE ================= */
 
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(
-    cors({
-        origin: CLIENT_URL,
-        credentials: true,
-    })
-);
+// CORS only needed in DEV (separate origins)
+if (!isProd) {
+    app.use(
+        cors({
+            origin: CLIENT_URL,
+            credentials: true,
+        })
+    );
+}
 
-/* ====================== DATABASE ====================== */
+/* ================= DATABASE ================= */
 
 mongoose
     .connect(process.env.MONGO_URI)
     .then(() => console.log("MongoDB connected"))
     .catch(err => {
-        console.error("MongoDB connection error:", err);
+        console.error("Mongo error:", err);
         process.exit(1);
     });
 
-/* ====================== MODELS ====================== */
-
-const User = mongoose.model(
-    "User",
-    new mongoose.Schema(
-        {
-            email: { type: String, unique: true },
-            password: String,
-            FName: String,
-            LName: String,
-            bio: String,
-            skills: [String],
-            profilePhoto: String,
-            likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-            matches: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-            swipedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-        },
-        { timestamps: true }
-    )
-);
-
-const Message = mongoose.model(
-    "Message",
-    new mongoose.Schema(
-        {
-            roomId: String,
-            senderId: mongoose.Schema.Types.ObjectId,
-            text: String,
-        },
-        { timestamps: true }
-    )
-);
-
-/* ====================== COOKIE CONFIG ====================== */
+/* ================= AUTH ================= */
 
 const cookieOptions = {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+    sameSite: "lax", // ALWAYS lax
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
-/* ====================== AUTH MIDDLEWARE ====================== */
 
 const requireAuth = (req, res, next) => {
     const token = req.cookies?.token;
@@ -92,11 +62,11 @@ const requireAuth = (req, res, next) => {
         req.user = jwt.verify(token, process.env.JWT_SECRET);
         next();
     } catch {
-        return res.status(401).json({ error: "Invalid token" });
+        res.status(401).json({ error: "Invalid token" });
     }
 };
 
-/* ====================== FILE UPLOAD ====================== */
+/* ================= FILE UPLOAD ================= */
 
 const uploadsDir = path.join(__dirname, "uploads");
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -108,13 +78,15 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-
 app.use("/uploads", express.static(uploadsDir));
 
-/* ====================== AUTH ROUTES ====================== */
+/* ================= AUTH ROUTES ================= */
 
 app.post("/api/signup", async (req, res) => {
     const { email, password, FName, LName } = req.body;
+
+    if (!email || !password || password.length < 6)
+        return res.status(400).json({ message: "Invalid input" });
 
     if (await User.findOne({ email }))
         return res.status(400).json({ message: "User exists" });
@@ -143,11 +115,82 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-    res.clearCookie("token", cookieOptions);
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+    });
     res.json({ success: true });
 });
 
-/* ====================== USER ====================== */
+/* ================= SWIPE ================= */
+
+app.post("/api/rightSwipe", requireAuth, async (req, res) => {
+    try {
+        const { userOnFeed } = req.body;
+        const myId = req.user.id;
+
+        if (!userOnFeed) {
+            return res.status(400).json({ error: "userOnFeed missing" });
+        }
+
+        const me = await User.findById(myId);
+        const other = await User.findById(userOnFeed);
+
+        if (!me || !other) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Prevent duplicate swipes
+        if (me.swipedUsers.includes(userOnFeed)) {
+            return res.json({ match: false });
+        }
+
+        me.swipedUsers.push(userOnFeed);
+        me.likes.push(userOnFeed);
+
+        let match = false;
+
+        if (other.likes.includes(myId)) {
+            match = true;
+            me.matches.push(userOnFeed);
+            other.matches.push(myId);
+            await other.save();
+        }
+
+        await me.save();
+
+        res.json({ match });
+    } catch (err) {
+        console.error("Right swipe error:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+app.post("/api/leftSwipe", requireAuth, async (req, res) => {
+    try {
+        const { userOnFeed } = req.body;
+        const myId = req.user.id;
+
+        if (!userOnFeed) {
+            return res.status(400).json({ error: "userOnFeed missing" });
+        }
+
+        const me = await User.findById(myId);
+
+        if (!me.swipedUsers.includes(userOnFeed)) {
+            me.swipedUsers.push(userOnFeed);
+            await me.save();
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Left swipe error:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+/* ================= USER ================= */
 
 app.get("/api/getUserData", requireAuth, async (req, res) => {
     const user = await User.findById(req.user.id).select("-password");
@@ -181,7 +224,7 @@ app.post(
     }
 );
 
-/* ====================== FEED / MATCH ====================== */
+/* ================= FEED ================= */
 
 app.get("/api/getDatabaseData", requireAuth, async (req, res) => {
     const me = await User.findById(req.user.id);
@@ -202,67 +245,65 @@ app.post("/api/getUserMatches", requireAuth, async (req, res) => {
     res.json(user.matches);
 });
 
-/* ====================== MESSAGES ====================== */
+/* ================= MESSAGES ================= */
 
 app.post("/api/getMessages", requireAuth, async (req, res) => {
-    const messages = await Message.find({ roomId: req.body.roomId })
-        .sort({ createdAt: 1 });
-
+    const messages = await Message.find({ roomId: req.body.roomId }).sort({
+        createdAt: 1,
+    });
     res.json(messages);
 });
 
-/* ====================== Logout ====================== */
-app.post("/api/logout", (req, res) => {
+/* ================= DELETE ACCOUNT ================= */
+
+app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
+    const userId = req.user.id;
+
+    await User.findByIdAndDelete(userId);
+    await Message.deleteMany({
+        $or: [{ senderId: userId }, { receiverId: userId }],
+    });
+
     res.clearCookie("token", cookieOptions);
     res.json({ success: true });
 });
 
-/* ====================== Delete account ====================== */
-app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
-    try {
-        const userId = req.user.id;
+/* ================= FRONTEND ================= */
 
-        // Delete user
-        await User.findByIdAndDelete(userId);
+const distPath = path.resolve(__dirname, "../../frontend/dist");
 
-        // Delete related messages
-        await Message.deleteMany({
-            $or: [
-                { senderId: userId },
-                { receiverId: userId },
-            ],
-        });
+if (fs.existsSync(distPath)) {
+    console.log("Serving frontend from:", distPath);
 
-        // Clear auth cookie
-        res.clearCookie("token", cookieOptions);
+    app.use(express.static(distPath));
 
-        res.json({ success: true });
-    } catch (err) {
-        console.error("Delete account error:", err);
-        res.status(500).json({ error: "Server error" });
-    }
-});
+    // React Router fallback
+    app.get(/^\/(?!api).*/, (req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+    });
+} else {
+    console.log("Frontend dist not found. Running API-only mode.");
+}
 
-/* ====================== SOCKET.IO ====================== */
+
+/* ================= SOCKET ================= */
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
-    cors: {
-        origin: CLIENT_URL,
-        credentials: true,
-    },
+    cors: isProd
+        ? undefined
+        : { origin: CLIENT_URL, credentials: true },
 });
 
 io.use((socket, next) => {
-    const cookie = socket.handshake.headers.cookie;
-    if (!cookie) return next(new Error("Unauthorized"));
+    const cookies = Object.fromEntries(
+        socket.handshake.headers.cookie
+            ?.split("; ")
+            .map(c => c.split("=")) || []
+    );
 
-    const token = cookie
-        .split("; ")
-        .find(c => c.startsWith("token="))
-        ?.split("=")[1];
-
+    const token = cookies.token;
     if (!token) return next(new Error("Unauthorized"));
 
     try {
@@ -274,15 +315,20 @@ io.use((socket, next) => {
 });
 
 io.on("connection", socket => {
-    socket.on("join_room", room => socket.join(room));
+    socket.on("join_room", roomId => {
+        if (roomId) socket.join(roomId);
+    });
+
     socket.on("send_message", async data => {
         const msg = await Message.create(data);
-        socket.to(data.roomId).emit("receive_message", msg);
+        io.to(data.roomId).emit("receive_message", msg);
     });
 });
 
-/* ====================== START ====================== */
+/* ================= START ================= */
 
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT} (${process.env.NODE_ENV})`);
+    console.log(
+        `Server running on ${PORT} (${isProd ? "PRODUCTION" : "DEVELOPMENT"})`
+    );
 });

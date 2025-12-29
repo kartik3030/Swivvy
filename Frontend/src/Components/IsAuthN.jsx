@@ -1,37 +1,33 @@
-// IsAuthN.jsx
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import Landing from "../Pages/Landing.jsx";
 import API_URL from "../api";
 
 const IsAuthN = () => {
-    const [checking, setChecking] = useState(true);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [isAuth, setIsAuth] = useState(false);
 
     useEffect(() => {
-        fetch(`${API_URL}/api/getUserData`, {
-            credentials: "include",
-        })
-            .then((res) => {
-                if (res.ok) {
-                    setIsLoggedIn(true);
-                } else {
-                    setIsLoggedIn(false);
-                }
-            })
-            .catch(() => setIsLoggedIn(false))
-            .finally(() => setChecking(false));
+        const checkAuth = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/getUserData`, {
+                    credentials: "include",
+                });
+
+                if (res.ok) setIsAuth(true);
+            } catch { }
+            finally {
+                setLoading(false);
+            }
+        };
+
+        checkAuth();
     }, []);
 
-    // Prevent flicker while checking auth
-    if (checking) return null;
+    if (loading) return null;
 
-    // If logged in → redirect to /explore
-    if (isLoggedIn) {
-        return <Navigate to="/explore" replace />;
-    }
-
-    return <Landing />;
+    return isAuth
+        ? <Navigate to="/explore" replace />
+        : <Navigate to="/login" replace />;
 };
 
 export default IsAuthN;

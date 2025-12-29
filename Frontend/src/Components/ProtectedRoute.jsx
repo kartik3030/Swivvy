@@ -1,37 +1,40 @@
+import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
 import API_URL from "../api";
 
-const ProtectedRoute = ({ element: Component }) => {
-    const [checking, setChecking] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+const ProtectedRoute = () => {
+    const [loading, setLoading] = useState(true);
+    const [isAuth, setIsAuth] = useState(false);
 
     useEffect(() => {
-        let mounted = true;
+        const checkAuth = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/getUserData`, {
+                    credentials: "include",
+                });
 
-        fetch(`${API_URL}/api/getUserData`, {
-            credentials: "include",
-        })
-            .then((res) => {
-                if (mounted) setIsAuthenticated(res.ok);
-            })
-            .catch(() => {
-                if (mounted) setIsAuthenticated(false);
-            })
-            .finally(() => {
-                if (mounted) setChecking(false);
-            });
-
-        return () => {
-            mounted = false;
+                if (res.ok) {
+                    setIsAuth(true);
+                } else {
+                    setIsAuth(false);
+                }
+            } catch {
+                setIsAuth(false);
+            } finally {
+                setLoading(false);
+            }
         };
+
+        checkAuth();
     }, []);
 
-    if (checking) return null;
+    if (loading) return null;
 
-    if (!Component) return <Navigate to="/" replace />;
+    if (!isAuth) {
+        return <Navigate to="/" replace />;
+    }
 
-    return isAuthenticated ? <Component /> : <Navigate to="/" replace />;
+    return <Outlet />;
 };
 
 export default ProtectedRoute;

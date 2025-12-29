@@ -3,12 +3,9 @@ import Aside from "../Components/Aside";
 import Navbar2 from "../Components/Navbar2";
 import SwipeCard from "../Components/SwipeCard";
 import Chat from "../Components/Chat";
-import { useNavigate } from "react-router-dom";
 import API_URL from "../api";
 
 const ExplorePage = () => {
-    const navigate = useNavigate();
-
     const [user, setUser] = useState(null);
     const [users, setUsers] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -21,40 +18,69 @@ const ExplorePage = () => {
     /* ================= AUTH CHECK ================= */
 
     useEffect(() => {
-        fetch(`${API_URL}/api/getUserData`, {
-            credentials: "include",
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error("Auth failed");
-                return res.json();
-            })
-            .then((data) => {
-                setUser(data);
-                setLoading(false);
-            })
-            .catch((err) => {
+        let cancelled = false;
+
+        const checkAuth = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/getUserData`, {
+                    credentials: "include",
+                });
+
+                if (!res.ok) {
+                    setLoading(false);
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (!cancelled) {
+                    setUser(data);
+                    setLoading(false);
+                }
+            } catch (err) {
                 console.error("Auth error:", err);
-                navigate("/landing");
-            });
-    }, [navigate]);
+                setLoading(false);
+            }
+        };
+
+        checkAuth();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     /* ================= FETCH USERS ================= */
 
     useEffect(() => {
         if (!user) return;
 
-        fetch(`${API_URL}/api/getDatabaseData`, {
-            credentials: "include",
-        })
-            .then((res) => {
+        let cancelled = false;
+
+        const fetchUsers = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/getDatabaseData`, {
+                    credentials: "include",
+                });
+
                 if (!res.ok) throw new Error("Failed to fetch users");
-                return res.json();
-            })
-            .then((data) => {
-                setUsers(Array.isArray(data) ? data : []);
-                setCurrentIndex(0);
-            })
-            .catch((err) => console.error("Fetch users error:", err));
+
+                const data = await res.json();
+
+                if (!cancelled) {
+                    setUsers(Array.isArray(data) ? data : []);
+                    setCurrentIndex(0);
+                }
+            } catch (err) {
+                console.error("Fetch users error:", err);
+            }
+        };
+
+        fetchUsers();
+
+        return () => {
+            cancelled = true;
+        };
     }, [user]);
 
     const currentUser =
@@ -170,10 +196,8 @@ const ExplorePage = () => {
                         />
                     </div>
 
-                    {/* Bottom Buttons */}
                     <div className="flex justify-center mt-3">
                         <div className="flex gap-5 items-center">
-                            {/* Reject */}
                             <button
                                 onClick={handleLeftSwipe}
                                 disabled={!currentUser || isSwiping}
@@ -190,7 +214,6 @@ const ExplorePage = () => {
                                 </svg>
                             </button>
 
-                            {/* Accept */}
                             <button
                                 onClick={handleRightSwipe}
                                 disabled={!currentUser || isSwiping}
@@ -207,9 +230,8 @@ const ExplorePage = () => {
                                 </svg>
                             </button>
 
-                            {/* Chat (Mobile) */}
                             <button
-                                onClick={() => navigate("/chatPage")}
+                                onClick={() => window.location.assign("/chatPage")}
                                 className="sm:hidden flex items-center justify-center w-12 h-12 p-3 border-2 border-yellow-400 rounded-full"
                             >
                                 <svg
