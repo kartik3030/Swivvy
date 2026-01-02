@@ -36,19 +36,27 @@ app.use(cookieParser());
 
 app.use(
     cors({
-        origin: CLIENT_URL,
+        origin: process.env.CLIENT_URL,
         credentials: true,
     })
 );
+
+app.options("*", cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+}));
+
+
 
 /* ================= AUTH ================= */
 
 const cookieOptions = {
     httpOnly: true,
-    secure: isProd,
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
+
 
 const requireAuth = (req, res, next) => {
     const token = req.cookies?.token;
