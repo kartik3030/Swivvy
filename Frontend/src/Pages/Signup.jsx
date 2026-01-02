@@ -144,136 +144,103 @@ const Signup = () => {
                 </div>
 
                 <form onSubmit={submit}>
-                    <div className="sm:flex sm:mt-2 flex justify-center items-center">
-                        <div>
-                            {/* Personal Details */}
-                            <div>
-                                <h1 className="text-center text-2xl font-extrabold">
-                                    Personal Details
-                                </h1>
+                    <div className="flex gap-x-15 ml-50 mt-10">
+                        {/* Personal Details */}
+                        <div className="p-5 bg-pink-50/20">
+                            <h1 className="text-center font-extrabold">
+                                Personal Details
+                            </h1>
 
-                                <div className="flex justify-start ml-10 sm:ml-5 mt-5">
-                                    <p>Full Name</p>
-                                </div>
-
-                                <div className="sm:flex justify-center gap-x-2">
-                                    <div className="flex justify-center">
-                                        <input
-                                            type="text"
-                                            name="FName"
-                                            value={form.FName}
-                                            onChange={onchange}
-                                            placeholder="First Name"
-                                            className="border-2 hover:border-[#D8BC9B] p-5 rounded-[10px] w-70 sm:w-58"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="flex justify-center">
-                                        <input
-                                            type="text"
-                                            name="LName"
-                                            value={form.LName}
-                                            onChange={onchange}
-                                            placeholder="Last Name"
-                                            className="border-2 hover:border-[#D8BC9B] p-5 rounded-[10px] w-70 mt-2 sm:mt-0 sm:w-58"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="mt-3">
-                                    <div className="flex justify-start ml-10 sm:ml-5">
-                                        <p>Date of birth</p>
-                                    </div>
-                                    <div className="flex justify-center">
-                                        <input
-                                            type="date"
-                                            name="date"
-                                            value={form.date}
-                                            onChange={onchange}
-                                            className="border-2 hover:border-[#D8BC9B] mt-1 p-5 rounded-[10px] w-70 sm:w-120"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="mt-3">
-                                    <div className="flex justify-start ml-10 sm:ml-5">
-                                        <p>Country</p>
-                                    </div>
-                                    <div className="flex justify-center">
-                                        <select
-                                            name="country"
-                                            value={form.country}
-                                            onChange={onchange}
-                                            className="border-2 hover:border-[#D8BC9B] mt-1 p-5 rounded-[10px] w-70 sm:w-120"
-                                            required
-                                        >
-                                            <option value="">Select your country</option>
-                                            <option value="IN">India</option>
-                                            <option value="US">United States</option>
-                                            <option value="GB">United Kingdom</option>
-                                            <option value="CA">Canada</option>
-                                        </select>
-                                    </div>
-                                </div>
+                            <p className="font-bold text-gray-400">Full Name</p>
+                            <div className="flex gap-x-5">
+                                <input
+                                    type="text"
+                                    name="FName"
+                                    value={form.FName}
+                                    onChange={onchange}
+                                    placeholder="First Name"
+                                    className="border-2 border-gray-400 p-5 rounded-[10px] w-57"
+                                />
+                                <input
+                                    type="text"
+                                    name="LName"
+                                    value={form.LName}
+                                    onChange={onchange}
+                                    placeholder="Last Name"
+                                    className="border-2 border-gray-400 p-5 rounded-[10px] w-57"
+                                />
                             </div>
 
-                            {/* Account Details */}
-                            <div className="p-5">
-                                <h1 className="text-center text-2xl font-extrabold">
-                                    Account Details
-                                </h1>
+                            <div className="mt-3">
+                                <p className="font-bold text-gray-400">
+                                    Date of birth
+                                </p>
+                                <input
+                                    type="date"
+                                    name="date"
+                                    value={form.date}
+                                    onChange={onchange}
+                                    className="border-2 border-gray-400 mt-1 p-5 rounded-[10px] w-120"
+                                />
+                            </div>
 
-                                <div className="mt-3">
-                                    <div className="flex justify-start ml-5 sm:ml-0">
-                                        <p>Email</p>
-                                    </div>
-                                    <div className="flex justify-center">
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={form.email}
-                                            onChange={onchange}
-                                            placeholder="Joe@gmail.com"
-                                            className="border-2 hover:border-[#D8BC9B] p-5 rounded-[10px] w-70 sm:w-120"
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                            <div className="mt-3">
+                                <p className="font-bold text-gray-400">
+                                    Country / Region
+                                </p>
+                                <select
+                                    name="country"
+                                    value={form.country}
+                                    onChange={onchange}
+                                    className="border-2 border-gray-400 mt-1 p-5 rounded-[10px] w-120"
+                                >
+                                    <option value="">Select your country</option>
+                                    <option value="IN">India</option>
+                                    <option value="US">United States</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="CA">Canada</option>
+                                </select>
+                            </div>
+                        </div>
 
-                                <div className="mt-3">
-                                    <div className="flex justify-start ml-5 sm:ml-0">
-                                        <p className="text-sm text-gray-200">
-                                            Suggestion: Keep your password unique and strong
-                                        </p>
-                                    </div>
+                        {/* Account Details */}
+                        <div className="p-5 bg-pink-50/20">
+                            <h1 className="text-center font-extrabold">
+                                Account Details
+                            </h1>
 
-                                    <div className="flex justify-center">
-                                        <input
-                                            type="password"
-                                            name="password"
-                                            value={form.password}
-                                            onChange={onchange}
-                                            placeholder="Password"
-                                            className="border-2 hover:border-[#D8BC9B] p-5 rounded-[10px] w-70 sm:w-120 mt-1"
-                                            required
-                                        />
-                                    </div>
+                            <div className="mt-3">
+                                <p className="font-bold text-gray-400">Email</p>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={form.email}
+                                    onChange={onchange}
+                                    placeholder="Joe@gmail.com"
+                                    className="border-2 border-gray-400 p-5 rounded-[10px] w-120"
+                                />
+                            </div>
 
-                                    <div className="flex justify-center">
-                                        <input
-                                            type="password"
-                                            name="confirmPassword"
-                                            value={form.confirmPassword}
-                                            onChange={onchange}
-                                            placeholder="Confirm Password"
-                                            className="border-2 hover:border-[#D8BC9B] p-5 rounded-[10px] w-70 sm:w-120 mt-2"
-                                            required
-                                        />
-                                    </div>
-                                </div>
+                            <div className="mt-3">
+                                <p className="font-bold text-gray-400">
+                                    Suggestion: Keep your password unique and strong
+                                </p>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    value={form.password}
+                                    onChange={onchange}
+                                    placeholder="Password"
+                                    className="border-2 border-gray-400 p-5 rounded-[10px] w-120 mt-1"
+                                />
+                                <input
+                                    type="password"
+                                    name="confirmPassword"
+                                    value={form.confirmPassword}
+                                    onChange={onchange}
+                                    placeholder="Confirm Password"
+                                    className="border-2 border-gray-400 p-5 rounded-[10px] w-120 mt-5"
+                                />
                             </div>
                         </div>
                     </div>
@@ -293,11 +260,11 @@ const Signup = () => {
                     <div className="mt-5 flex justify-center">
                         <button
                             type="submit"
-                            className={`w-120 p-3 cursor-pointer rounded-[10px] text-white font-bold ${isDisable
-                                    ? "bg-gray-500"
-                                    : "bg-blue-700 hover:bg-blue-500"
-                                }`}
                             disabled={isDisable}
+                            className={`w-120 p-3 rounded-[10px] text-white font-bold ${isDisable
+                                ? "bg-gray-500"
+                                : "bg-blue-700 hover:bg-blue-500"
+                                }`}
                         >
                             {isDisable ? "Submitting..." : "Create Account"}
                         </button>
