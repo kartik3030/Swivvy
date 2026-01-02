@@ -128,7 +128,7 @@ const Signup = () => {
                     <form onSubmit={submit} className="mt-5">
                         {/* First Name */}
                         <div className="mt-3">
-                            <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold">
+                            <p className="mb-1 text-left sm:ml-30 ml-15 font-semibold">
                                 First Name
                             </p>
                             <input
@@ -136,19 +136,21 @@ const Signup = () => {
                                 name="FName"
                                 value={form.FName}
                                 onChange={onchange}
+                                placeholder="First Name"
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
                         </div>
 
                         {/* Last Name */}
                         <div className="mt-3">
-                            <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold">
+                            <p className="mb-1 text-left sm:ml-30 ml-15 font-semibold">
                                 Last Name
                             </p>
                             <input
                                 type="text"
                                 name="LName"
                                 value={form.LName}
+                                placeholder="Last Name"
                                 onChange={onchange}
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
@@ -156,13 +158,14 @@ const Signup = () => {
 
                         {/* Email */}
                         <div className="mt-3">
-                            <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold">
+                            <p className="mb-1 text-left sm:ml-30 ml-15 font-semibold">
                                 Email
                             </p>
                             <input
                                 type="email"
                                 name="email"
                                 value={form.email}
+                                placeholder="Email"
                                 onChange={onchange}
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
@@ -170,7 +173,7 @@ const Signup = () => {
 
                         {/* DOB */}
                         <div className="mt-3">
-                            <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold">
+                            <p className="mb-1 text-left sm:ml-30 ml-15 font-semibold">
                                 Date of Birth
                             </p>
                             <input
@@ -184,7 +187,7 @@ const Signup = () => {
 
                         {/* Country */}
                         <div className="mt-3">
-                            <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold">
+                            <p className="mb-1 text-left sm:ml-30 ml-15 font-semibold">
                                 Country
                             </p>
                             <select
@@ -203,13 +206,14 @@ const Signup = () => {
 
                         {/* Password */}
                         <div className="mt-3">
-                            <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold">
+                            <p className="mb-1 text-left sm:ml-30 ml-15 font-semibold">
                                 Password
                             </p>
                             <input
                                 type="password"
                                 name="password"
                                 value={form.password}
+                                placeholder="Password"
                                 onChange={onchange}
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
@@ -217,13 +221,14 @@ const Signup = () => {
 
                         {/* Confirm Password */}
                         <div className="mt-3">
-                            <p className="mb-1 text-left sm:ml-35 ml-10 font-semibold">
+                            <p className="mb-1 text-left sm:ml-30 ml-15 font-semibold">
                                 Confirm Password
                             </p>
                             <input
                                 type="password"
                                 name="confirmPassword"
                                 value={form.confirmPassword}
+                                placeholder="Confirm Password"
                                 onChange={onchange}
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
