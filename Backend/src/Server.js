@@ -31,37 +31,26 @@ const isProd = process.env.NODE_ENV === "production";
 
 /* ================= MIDDLEWARE ================= */
 
+app.set("trust proxy", 1);
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(
     cors({
-        origin: (origin, callback) => {
-            if (!origin) return callback(null, false);
-            if (origin === process.env.CLIENT_URL) {
-                return callback(null, origin);
-            }
-            return callback(new Error("Not allowed by CORS"));
-        },
+        origin: CLIENT_URL,
         credentials: true,
     })
 );
 
-// Explicit preflight handler
-app.options("*", (req, res) => {
-    res.header("Access-Control-Allow-Origin", process.env.CLIENT_URL);
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    res.sendStatus(204);
-});
+
+
 
 /* ================= AUTH ================= */
 
 const cookieOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -181,8 +170,13 @@ app.post(
     requireAuth,
     upload.single("profilePhoto"),
     async (req, res) => {
+        const baseUrl =
+            process.env.NODE_ENV === "production"
+                ? `https://${req.get("host")}`
+                : `${req.protocol}://${req.get("host")}`;
+
         const photo = req.file
-            ? `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`
+            ? `${baseUrl}/uploads/${req.file.filename}`
             : undefined;
 
         const user = await User.findByIdAndUpdate(
@@ -197,6 +191,7 @@ app.post(
         res.json(user);
     }
 );
+
 /* ================= FEED ================= */
 
 app.get("/api/getDatabaseData", requireAuth, async (req, res) => {
