@@ -14,19 +14,14 @@ const userSchema = new mongoose.Schema(
             trim: true,
         },
 
-        date: {
-            type: Date,
-        },
-
         email: {
             type: String,
             required: true,
             unique: true,
             lowercase: true,
             trim: true,
-            index: true
+            index: true,
         },
-
 
         password: {
             type: String,
@@ -35,7 +30,7 @@ const userSchema = new mongoose.Schema(
 
         country: {
             type: String,
-            required: true,
+            default: "",
         },
 
         bio: {
@@ -59,30 +54,29 @@ const userSchema = new mongoose.Schema(
                 "https://i.pinimg.com/736x/7e/8c/81/7e8c8119bf240d4971880006afb7e1e6.jpg",
         },
 
-        /* ================= SWIPE LOGIC ================= */
-
-        // Users this user swiped RIGHT on
         likes: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "User",
+                default: [],
             },
         ],
 
-        // Users with MUTUAL right swipe
         matches: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "User",
+                default: [],
             },
         ],
+
         swipedUsers: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "User"
-            }
-        ]
-
+                ref: "User",
+                default: [],
+            },
+        ],
     },
     { timestamps: true }
 );

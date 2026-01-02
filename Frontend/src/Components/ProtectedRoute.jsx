@@ -13,11 +13,7 @@ const ProtectedRoute = () => {
                     credentials: "include",
                 });
 
-                if (res.ok) {
-                    setIsAuth(true);
-                } else {
-                    setIsAuth(false);
-                }
+                setIsAuth(res.ok);
             } catch {
                 setIsAuth(false);
             } finally {
@@ -28,10 +24,12 @@ const ProtectedRoute = () => {
         checkAuth();
     }, []);
 
-    if (loading) return null;
+    if (loading) {
+        return <div>Loading...</div>;
+    }
 
     if (!isAuth) {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/login" replace />;
     }
 
     return <Outlet />;

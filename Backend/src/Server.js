@@ -11,48 +11,44 @@ const fs = require("fs");
 const http = require("http");
 const { Server } = require("socket.io");
 
+/* ================= ENV GUARD ================= */
+
+if (!process.env.MONGO_URI) throw new Error("MONGO_URI missing");
+if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET missing");
+if (!process.env.CLIENT_URL) throw new Error("CLIENT_URL missing");
+
+/* ================= MODELS ================= */
+
 const User = require("./Models/User");
 const Message = require("./Models/Message");
 
+/* ================= APP ================= */
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const CLIENT_URL = process.env.CLIENT_URL;
 const isProd = process.env.NODE_ENV === "production";
 
-/* ================= BASIC MIDDLEWARE ================= */
+/* ================= MIDDLEWARE ================= */
 
 app.use(express.json());
 app.use(cookieParser());
 
-// CORS only needed in DEV (separate origins)
-if (!isProd) {
-    app.use(
-        cors({
-            origin: CLIENT_URL,
-            credentials: true,
-        })
-    );
-}
-
-/* ================= DATABASE ================= */
-
-mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => console.log("MongoDB connected"))
-    .catch(err => {
-        console.error("Mongo error:", err);
-        process.exit(1);
-    });
+app.use(
+    cors({
+        origin: CLIENT_URL,
+        credentials: true,
+    })
+);
 
 /* ================= AUTH ================= */
 
 const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-    sameSite: "lax", // ALWAYS lax
+    secure: isProd,
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
-
 
 const requireAuth = (req, res, next) => {
     const token = req.cookies?.token;
@@ -80,7 +76,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 app.use("/uploads", express.static(uploadsDir));
 
-/* ================= AUTH ROUTES ================= */
+/* ================= ROUTES ================= */
 
 app.post("/api/signup", async (req, res) => {
     const { email, password, FName, LName } = req.body;
@@ -115,79 +111,46 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-    });
+    res.clearCookie("token", cookieOptions);
     res.json({ success: true });
 });
 
 /* ================= SWIPE ================= */
 
 app.post("/api/rightSwipe", requireAuth, async (req, res) => {
-    try {
-        const { userOnFeed } = req.body;
-        const myId = req.user.id;
+    const { userOnFeed } = req.body;
+    const myId = req.user.id;
 
-        if (!userOnFeed) {
-            return res.status(400).json({ error: "userOnFeed missing" });
-        }
+    const me = await User.findById(myId);
+    const other = await User.findById(userOnFeed);
 
-        const me = await User.findById(myId);
-        const other = await User.findById(userOnFeed);
+    if (!me || !other) return res.status(404).json({ error: "User not found" });
 
-        if (!me || !other) {
-            return res.status(404).json({ error: "User not found" });
-        }
+    if (me.swipedUsers.includes(userOnFeed))
+        return res.json({ match: false });
 
-        // Prevent duplicate swipes
-        if (me.swipedUsers.includes(userOnFeed)) {
-            return res.json({ match: false });
-        }
+    me.swipedUsers.push(userOnFeed);
+    me.likes.push(userOnFeed);
 
-        me.swipedUsers.push(userOnFeed);
-        me.likes.push(userOnFeed);
-
-        let match = false;
-
-        if (other.likes.includes(myId)) {
-            match = true;
-            me.matches.push(userOnFeed);
-            other.matches.push(myId);
-            await other.save();
-        }
-
-        await me.save();
-
-        res.json({ match });
-    } catch (err) {
-        console.error("Right swipe error:", err);
-        res.status(500).json({ error: "Server error" });
+    let match = false;
+    if (other.likes.includes(myId)) {
+        match = true;
+        me.matches.push(userOnFeed);
+        other.matches.push(myId);
+        await other.save();
     }
+
+    await me.save();
+    res.json({ match });
 });
 
 app.post("/api/leftSwipe", requireAuth, async (req, res) => {
-    try {
-        const { userOnFeed } = req.body;
-        const myId = req.user.id;
-
-        if (!userOnFeed) {
-            return res.status(400).json({ error: "userOnFeed missing" });
-        }
-
-        const me = await User.findById(myId);
-
-        if (!me.swipedUsers.includes(userOnFeed)) {
-            me.swipedUsers.push(userOnFeed);
-            await me.save();
-        }
-
-        res.json({ success: true });
-    } catch (err) {
-        console.error("Left swipe error:", err);
-        res.status(500).json({ error: "Server error" });
+    const me = await User.findById(req.user.id);
+    if (!me.swipedUsers.includes(req.body.userOnFeed)) {
+        me.swipedUsers.push(req.body.userOnFeed);
+        await me.save();
     }
+    res.json({ success: true });
 });
 
 /* ================= USER ================= */
@@ -202,8 +165,6 @@ app.post(
     requireAuth,
     upload.single("profilePhoto"),
     async (req, res) => {
-        const { FName, LName, bio, skills } = req.body;
-
         const photo = req.file
             ? `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`
             : undefined;
@@ -211,10 +172,7 @@ app.post(
         const user = await User.findByIdAndUpdate(
             req.user.id,
             {
-                FName,
-                LName,
-                bio,
-                skills: Array.isArray(skills) ? skills : [skills],
+                ...req.body,
                 ...(photo && { profilePhoto: photo }),
             },
             { new: true }
@@ -223,27 +181,6 @@ app.post(
         res.json(user);
     }
 );
-
-/* ================= FEED ================= */
-
-app.get("/api/getDatabaseData", requireAuth, async (req, res) => {
-    const me = await User.findById(req.user.id);
-
-    const users = await User.find({
-        _id: { $nin: [req.user.id, ...me.swipedUsers] },
-    }).select("-password");
-
-    res.json(users);
-});
-
-app.post("/api/getUserMatches", requireAuth, async (req, res) => {
-    const user = await User.findById(req.user.id).populate(
-        "matches",
-        "FName LName profilePhoto"
-    );
-
-    res.json(user.matches);
-});
 
 /* ================= MESSAGES ================= */
 
@@ -254,60 +191,33 @@ app.post("/api/getMessages", requireAuth, async (req, res) => {
     res.json(messages);
 });
 
-/* ================= DELETE ACCOUNT ================= */
-
-app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
-    const userId = req.user.id;
-
-    await User.findByIdAndDelete(userId);
-    await Message.deleteMany({
-        $or: [{ senderId: userId }, { receiverId: userId }],
-    });
-
-    res.clearCookie("token", cookieOptions);
-    res.json({ success: true });
-});
-
 /* ================= FRONTEND ================= */
 
 const distPath = path.resolve(__dirname, "../../frontend/dist");
 
 if (fs.existsSync(distPath)) {
-    console.log("Serving frontend from:", distPath);
-
     app.use(express.static(distPath));
-
-    // React Router fallback
-    app.get(/^\/(?!api).*/, (req, res) => {
-        res.sendFile(path.join(distPath, "index.html"));
-    });
-} else {
-    console.log("Frontend dist not found. Running API-only mode.");
+    app.get(/^\/(?!api).*/, (_, res) =>
+        res.sendFile(path.join(distPath, "index.html"))
+    );
 }
-
 
 /* ================= SOCKET ================= */
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
-    cors: isProd
-        ? undefined
-        : { origin: CLIENT_URL, credentials: true },
+    cors: { origin: CLIENT_URL, credentials: true },
 });
 
 io.use((socket, next) => {
+    const raw = socket.handshake.headers.cookie || "";
     const cookies = Object.fromEntries(
-        socket.handshake.headers.cookie
-            ?.split("; ")
-            .map(c => c.split("=")) || []
+        raw.split("; ").map(c => c.split("="))
     );
 
-    const token = cookies.token;
-    if (!token) return next(new Error("Unauthorized"));
-
     try {
-        jwt.verify(token, process.env.JWT_SECRET);
+        jwt.verify(cookies.token, process.env.JWT_SECRET);
         next();
     } catch {
         next(new Error("Unauthorized"));
@@ -315,20 +225,24 @@ io.use((socket, next) => {
 });
 
 io.on("connection", socket => {
-    socket.on("join_room", roomId => {
-        if (roomId) socket.join(roomId);
-    });
-
+    socket.on("join_room", roomId => roomId && socket.join(roomId));
     socket.on("send_message", async data => {
         const msg = await Message.create(data);
         io.to(data.roomId).emit("receive_message", msg);
     });
 });
 
-/* ================= START ================= */
+/* ================= BOOT ================= */
 
-server.listen(PORT, () => {
-    console.log(
-        `Server running on ${PORT} (${isProd ? "PRODUCTION" : "DEVELOPMENT"})`
-    );
-});
+(async () => {
+    try {
+        await mongoose.connect(process.env.MONGO_URI);
+        console.log("MongoDB connected");
+
+        server.listen(PORT, () =>
+            console.log(`Server running on ${PORT}`)
+        );
+    } catch (err) {
+        console.error("Startup failed:", err);
+    }
+})();
