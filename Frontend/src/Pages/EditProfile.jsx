@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Navbar2 from "../Components/Navbar2";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../api";
+const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const EditProfile = () => {
     const navigate = useNavigate();
@@ -183,7 +184,12 @@ const EditProfile = () => {
                         <div className="border-2 rounded-[10px] w-full sm:w-150 border-white/10 bg-white/5 backdrop-blur-md shadow-lg p-3">
                             <div className="flex justify-center ml-5 mr-5">
                                 <img
-                                    src={preview || backendData.profilePhoto}
+                                    src={
+                                        preview ||
+                                        (backendData.profilePhoto
+                                            ? `${BASE_URL}${backendData.profilePhoto}`
+                                            : "/default-avatar.png")
+                                    }
                                     alt="Profile"
                                     className="max-h-60 sm:max-h-80 min-h-60 sm:min-h-80 rounded-[10px] object-cover"
                                 />

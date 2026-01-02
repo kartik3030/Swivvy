@@ -176,8 +176,9 @@ app.post(
                 : `${req.protocol}://${req.get("host")}`;
 
         const photo = req.file
-            ? `${baseUrl}/uploads/${req.file.filename}`
+            ? `/uploads/${req.file.filename}`
             : undefined;
+
 
         const user = await User.findByIdAndUpdate(
             req.user.id,
