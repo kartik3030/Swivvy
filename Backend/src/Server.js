@@ -36,17 +36,25 @@ app.use(cookieParser());
 
 app.use(
     cors({
-        origin: process.env.CLIENT_URL,
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, false);
+            if (origin === process.env.CLIENT_URL) {
+                return callback(null, origin);
+            }
+            return callback(new Error("Not allowed by CORS"));
+        },
         credentials: true,
     })
 );
 
-app.options("*", cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true,
-}));
-
-
+// Explicit preflight handler
+app.options("*", (req, res) => {
+    res.header("Access-Control-Allow-Origin", process.env.CLIENT_URL);
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.sendStatus(204);
+});
 
 /* ================= AUTH ================= */
 
