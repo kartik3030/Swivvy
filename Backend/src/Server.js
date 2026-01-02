@@ -197,6 +197,26 @@ app.post(
         res.json(user);
     }
 );
+/* ================= FEED ================= */
+
+app.get("/api/getDatabaseData", requireAuth, async (req, res) => {
+    const me = await User.findById(req.user.id);
+
+    const users = await User.find({
+        _id: { $nin: [req.user.id, ...me.swipedUsers] },
+    }).select("-password");
+
+    res.json(users);
+});
+
+app.post("/api/getUserMatches", requireAuth, async (req, res) => {
+    const user = await User.findById(req.user.id).populate(
+        "matches",
+        "FName LName profilePhoto"
+    );
+
+    res.json(user.matches);
+});
 
 /* ================= MESSAGES ================= */
 
