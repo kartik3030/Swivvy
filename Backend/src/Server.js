@@ -11,8 +11,8 @@ const fs = require("fs");
 const http = require("http");
 const { Server } = require("socket.io");
 
-const User = require("./models/User");
-const Message = require("./models/Message");
+const User = require("./Models/User");
+const Message = require("./Models/Message");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
