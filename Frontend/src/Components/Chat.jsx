@@ -142,7 +142,7 @@ const Chat = () => {
             .catch(() => setUser(null));
     }, []);
 
-    /* SOCKET LISTENER (SAFE, NO DUPLICATES) */
+    /* SOCKET LISTENER (CONNECTED + ROOM SAFE) */
     useEffect(() => {
         if (!roomId) return;
 
@@ -151,13 +151,18 @@ const Chat = () => {
             setMessages((prev) => [...prev, msg]);
         };
 
-        socket.on("receive_message", onReceive);
+        const attach = () => socket.on("receive_message", onReceive);
+
+        if (socket.connected) {
+            attach();
+        } else {
+            socket.once("connect", attach);
+        }
 
         return () => {
             socket.off("receive_message", onReceive);
         };
     }, [roomId]);
-
 
     /* FETCH MATCHES */
     useEffect(() => {
@@ -171,7 +176,7 @@ const Chat = () => {
             .then(setMatches);
     }, [userId]);
 
-    /* JOIN ROOM + LOAD HISTORY */
+    /* JOIN ROOM + LOAD HISTORY (CONNECTION SAFE) */
     useEffect(() => {
         if (!activeChat || !userId) return;
 
@@ -184,7 +189,12 @@ const Chat = () => {
         setMessages([]);
 
         const join = () => socket.emit("join_room", room);
-        socket.connected ? join() : socket.once("connect", join);
+
+        if (socket.connected) {
+            join();
+        } else {
+            socket.once("connect", join);
+        }
 
         fetch(`${API_URL}/api/getMessages`, {
             method: "POST",
@@ -196,7 +206,7 @@ const Chat = () => {
             .then(setMessages);
     }, [activeChat, userId]);
 
-    /* SEND MESSAGE (SERVER IS SOURCE OF TRUTH) */
+    /* SEND MESSAGE (SERVER AUTHORITY) */
     const sendChat = () => {
         if (!messageInput.trim() || !roomId) return;
 
