@@ -7,11 +7,8 @@ const resolveImage = (path) => {
     if (!path) {
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
     }
-
     if (path.startsWith("http")) return path;
-
     if (path.startsWith("/uploads")) return `${API_URL}${path}`;
-
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
 
@@ -28,7 +25,6 @@ const ChatList = ({ matches, onSelect }) => {
                 <button className="sm:hidden" onClick={() => navigate("/explore")}>
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
-
                 <h1 className="text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent">
                     Messages
                 </h1>
@@ -148,19 +144,18 @@ const Chat = () => {
             .catch(() => setUser(null));
     }, []);
 
-    /* SOCKET LISTENER */
+    /* SOCKET LISTENER (SINGLE, CLEAN) */
     useEffect(() => {
         if (!userId) return;
 
-        const handler = (msg) => {
+        const onReceive = (msg) => {
             setMessages((prev) => [...prev, msg]);
         };
 
-        socket.on("receive_message", handler);
+        socket.on("receive_message", onReceive);
 
         return () => {
-            socket.off("receive_message", handler);
-            socket.disconnect();
+            socket.off("receive_message", onReceive);
         };
     }, [userId]);
 
@@ -186,7 +181,15 @@ const Chat = () => {
                 : `${activeChat._id}_${userId}`;
 
         setRoomId(room);
-        socket.emit("join_room", room);
+        setMessages([]);
+
+        const join = () => socket.emit("join_room", room);
+
+        if (socket.connected) {
+            join();
+        } else {
+            socket.once("connect", join);
+        }
 
         fetch(`${API_URL}/api/getMessages`, {
             method: "POST",
@@ -198,19 +201,9 @@ const Chat = () => {
             .then(setMessages);
     }, [activeChat, userId]);
 
-    /* SEND MESSAGE */
+    /* SEND MESSAGE (NO DUPLICATION) */
     const sendChat = () => {
         if (!messageInput.trim() || !roomId) return;
-
-        const tempMessage = {
-            _id: Date.now(),
-            roomId,
-            senderId: userId,
-            receiverId: activeChat._id,
-            text: messageInput,
-        };
-
-        setMessages((prev) => [...prev, tempMessage]);
 
         socket.emit("send_message", {
             roomId,

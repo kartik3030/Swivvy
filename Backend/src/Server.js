@@ -232,24 +232,28 @@ app.post("/api/getMessages", requireAuth, async (req, res) => {
 /* ================= SOCKET ================= */
 
 const server = http.createServer(app);
+const cookie = require("cookie");
 
 const io = new Server(server, {
-    cors: { origin: CLIENT_URL, credentials: true },
+    cors: {
+        origin: CLIENT_URL,
+        credentials: true,
+    },
+    transports: ["websocket"],
 });
 
 io.use((socket, next) => {
-    const raw = socket.handshake.headers.cookie || "";
-    const cookies = Object.fromEntries(
-        raw.split("; ").map(c => c.split("="))
-    );
-
     try {
-        jwt.verify(cookies.token, process.env.JWT_SECRET);
+        const cookies = cookie.parse(socket.handshake.headers.cookie || "");
+        const token = cookies.token;
+        if (!token) throw new Error();
+        jwt.verify(token, process.env.JWT_SECRET);
         next();
     } catch {
         next(new Error("Unauthorized"));
     }
 });
+
 
 io.on("connection", socket => {
     socket.on("join_room", roomId => roomId && socket.join(roomId));
