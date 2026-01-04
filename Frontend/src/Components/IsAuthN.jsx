@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import API_URL from "../api";
+import api from "../api";
 
 const IsAuthN = () => {
     const [loading, setLoading] = useState(true);
@@ -9,10 +9,8 @@ const IsAuthN = () => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/getUserData`, {
-                    credentials: "include",
-                });
-                setIsAuth(res.ok);
+                await api.get("/api/getUserData");
+                setIsAuth(true);
             } catch {
                 setIsAuth(false);
             } finally {

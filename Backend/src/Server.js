@@ -12,6 +12,8 @@ const http = require("http");
 const { Server } = require("socket.io");
 const cookie = require("cookie");
 
+
+
 const onlineUsers = new Map(); // userId -> socketId
 
 /* ================= ENV GUARD ================= */
@@ -35,15 +37,25 @@ const isProd = process.env.NODE_ENV === "production";
 /* ================= MIDDLEWARE ================= */
 
 app.set("trust proxy", 1);
-app.use(express.json());
 app.use(cookieParser());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use(
     cors({
         origin: CLIENT_URL,
         credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
+
+app.options("*", cors({
+    origin: CLIENT_URL,
+    credentials: true,
+}));
+
+
 
 /* ================= AUTH ================= */
 
@@ -51,9 +63,9 @@ const cookieOptions = {
     httpOnly: true,
     secure: true,
     sameSite: "none",
+    path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
-
 
 const requireAuth = (req, res, next) => {
     const token = req.cookies?.token;
@@ -126,9 +138,10 @@ app.post("/api/login", async (req, res) => {
 
 app.post("/api/logout", (req, res) => {
     res.clearCookie("token", {
+        path: "/",
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: true,
+        sameSite: "none",
     });
 
     res.json({ success: true });
@@ -137,10 +150,12 @@ app.post("/api/logout", (req, res) => {
 app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
     await User.findByIdAndDelete(req.user.id);
     res.clearCookie("token", {
+        path: "/",
         httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
+        secure: true,
+        sameSite: "none",
     });
+
 
     res.json({ success: true });
 });
@@ -251,10 +266,13 @@ const io = new Server(server, {
     cors: {
         origin: CLIENT_URL,
         credentials: true,
-        methods: ["GET", "POST"],
     },
-    transports: ["polling", "websocket"],
+    transports: ["websocket"],
 });
+
+io.engine.pingTimeout = 60000;
+io.engine.pingInterval = 25000;
+
 
 io.use((socket, next) => {
     const raw = socket.request.headers.cookie;
@@ -305,15 +323,15 @@ io.on("connection", (socket) => {
 
 /* ================= FRONTEND BUILD ================= */
 
-if (isProd) {
-    const distPath = path.join(__dirname, "frontend", "dist");
-    if (fs.existsSync(distPath)) {
-        app.use(express.static(distPath));
-        app.get("*", (_, res) =>
-            res.sendFile(path.join(distPath, "index.html"))
-        );
-    }
-}
+// if (isProd) {
+//     const distPath = path.join(__dirname, "frontend", "dist");
+//     if (fs.existsSync(distPath)) {
+//         app.use(express.static(distPath));
+//         app.get("*", (_, res) =>
+//             res.sendFile(path.join(distPath, "index.html"))
+//         );
+//     }
+// }
 
 /* ================= BOOT ================= */
 

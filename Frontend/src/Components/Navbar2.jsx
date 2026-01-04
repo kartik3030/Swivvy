@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import API_URL from "../api";
+import api, { BASE_URL } from "../api";
+
+/* ================= IMAGE RESOLVER ================= */
 
 const resolveImage = (path) => {
     if (!path) {
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
     }
     if (path.startsWith("http")) return path;
-    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+    if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
+
+/* ================= NAVBAR ================= */
 
 const Navbar2 = () => {
     const [backendData, setBackendData] = useState(null);
@@ -20,29 +24,20 @@ const Navbar2 = () => {
 
         (async () => {
             try {
-                const res = await fetch(`${API_URL}/api/getUserData`, {
-                    credentials: "include",
-                });
-
-                if (res.status === 401) {
-                    if (mounted) {
-                        setBackendData(null);
-                        navigate("/", { replace: true });
-                    }
-                    return;
+                const res = await api.get("/api/getUserData");
+                if (mounted) setBackendData(res.data);
+            } catch (err) {
+                if (mounted) {
+                    setBackendData(null);
+                    navigate("/", { replace: true });
                 }
-
-                const data = await res.json();
-                if (mounted) setBackendData(data);
-            } catch {
-                if (mounted) setBackendData(null);
             }
         })();
 
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [navigate]);
 
     const profileSrc = resolveImage(backendData?.profilePhoto);
 

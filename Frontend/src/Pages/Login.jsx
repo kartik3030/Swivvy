@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
-import API_URL from "../api";
+import api from "../api";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -14,7 +14,6 @@ const Login = () => {
     });
 
     const submitLock = useRef(false);
-    const abortRef = useRef(null);
 
     function onchange(e) {
         setForm((prev) => ({
@@ -45,38 +44,16 @@ const Login = () => {
         setLoading(true);
         setError("");
 
-        abortRef.current = new AbortController();
-
         try {
-            const res = await fetch(`${API_URL}/api/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ email, password }),
-                signal: abortRef.current.signal,
-            });
-
-            let data = {};
-            try {
-                data = await res.json();
-            } catch {
-                // backend might not send JSON in prod
-            }
-
-            if (!res.ok) {
-                setError(data.message || "Login failed. Try again.");
-                return;
-            }
-
-
+            await api.post("/api/login", { email, password });
 
             setForm({ email: "", password: "" });
             navigate("/explore");
         } catch (err) {
-            if (err.name !== "AbortError") {
-                console.error("Login error:", err);
-                setError("Something went wrong. Please try again.");
-            }
+            setError(
+                err?.response?.data?.message ||
+                "Login failed. Try again."
+            );
         } finally {
             submitLock.current = false;
             setLoading(false);

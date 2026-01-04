@@ -1,17 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import Navbar2 from "../Components/Navbar2";
 import { Link, useNavigate } from "react-router-dom";
-import API_URL from "../api";
+import api, { BASE_URL } from "../api";
+
+/* ================= IMAGE RESOLVER ================= */
+
 const resolveImage = (path) => {
     if (!path) {
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
     }
 
-    // already absolute
     if (path.startsWith("http")) return path;
-
-    // backend-relative
-    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+    if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
 
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
@@ -22,35 +22,19 @@ const ProfilePage = () => {
     const [loading, setLoading] = useState(true);
 
     const navigate = useNavigate();
-
-    const abortRef = useRef(null);
     const actionLock = useRef(false);
 
     /* ================= AUTH + FETCH USER ================= */
 
     useEffect(() => {
-        abortRef.current = new AbortController();
-
-        fetch(`${API_URL}/api/getUserData`, {
-            credentials: "include",
-            signal: abortRef.current.signal,
-        })
+        api.get("/api/getUserData")
             .then((res) => {
-                if (!res.ok) throw new Error("Auth failed");
-                return res.json();
-            })
-            .then((data) => {
-                setBackendData(data);
+                setBackendData(res.data);
                 setLoading(false);
             })
-            .catch((err) => {
-                if (err.name !== "AbortError") {
-                    console.error("Profile fetch error:", err);
-                    navigate("/login");
-                }
+            .catch(() => {
+                navigate("/login");
             });
-
-        return () => abortRef.current?.abort();
     }, [navigate]);
 
     /* ================= LOGOUT ================= */
@@ -60,12 +44,9 @@ const ProfilePage = () => {
         actionLock.current = true;
 
         try {
-            await fetch(`${API_URL}/api/logout`, {
-                method: "POST",
-                credentials: "include",
-            });
-        } catch (err) {
-            console.warn("Logout failed:", err);
+            await api.post("/api/logout");
+        } catch {
+            // ignore
         } finally {
             navigate("/login");
         }
@@ -78,13 +59,7 @@ const ProfilePage = () => {
         actionLock.current = true;
 
         try {
-            const res = await fetch(`${API_URL}/api/deleteAccount`, {
-                method: "DELETE",
-                credentials: "include",
-            });
-
-            if (!res.ok) throw new Error("Delete failed");
-
+            await api.delete("/api/deleteAccount");
             navigate("/");
         } catch (err) {
             console.error("Delete account error:", err);
@@ -92,6 +67,7 @@ const ProfilePage = () => {
             setShowConfirm(false);
         }
     };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -128,31 +104,31 @@ const ProfilePage = () => {
                 <div className="flex justify-center mt-3">
                     <div className="w-200 flex gap-6 p-4 rounded-xl bg-white/5 backdrop-blur-md border border-white/10">
                         <img
-                            src={resolveImage(backendData?.profilePhoto)}
+                            src={resolveImage(backendData.profilePhoto)}
                             alt="profile"
                             className="w-40 h-50 rounded-lg object-cover"
                         />
 
                         <div>
                             <h1 className="text-3xl font-bold">
-                                {backendData?.FName}
+                                {backendData.FName}
                             </h1>
 
                             <p className="text-gray-400 flex items-center">
                                 <span className="material-symbols-outlined">
                                     location_on
                                 </span>
-                                {backendData?.country}
+                                {backendData.country}
                             </p>
 
-                            <p className="mt-2">{backendData?.bio}</p>
+                            <p className="mt-2">{backendData.bio}</p>
 
                             <p className="mt-5 font-bold text-red-900">
                                 Top Skills
                             </p>
 
                             <div className="flex gap-2 mt-2 flex-wrap">
-                                {backendData?.skills?.slice(0, 6).map((s, i) => (
+                                {backendData.skills?.slice(0, 6).map((s, i) => (
                                     <span
                                         key={i}
                                         className="px-3 py-1 rounded-full border border-white/20 text-sm bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent font-bold"

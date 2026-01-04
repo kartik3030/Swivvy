@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket";
-import API_URL from "../api";
+import api, { BASE_URL } from "../api";
 
 /* ================= IMAGE RESOLVER ================= */
 
@@ -10,7 +10,7 @@ const resolveImage = (path) => {
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 
     if (path.startsWith("http")) return path;
-    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+    if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
 
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
@@ -131,16 +131,12 @@ const Chat = () => {
     /* ===== AUTH ===== */
 
     useEffect(() => {
-        fetch(`${API_URL}/api/getUserData`, { credentials: "include" })
-            .then((res) => {
-                if (res.status === 401) {
-                    navigate("/", { replace: true });
-                    throw new Error("Unauthorized");
-                }
-                return res.json();
+        api.get("/api/getUserData")
+            .then((res) => setUser(res.data))
+            .catch(() => {
+                setUser(null);
+                navigate("/", { replace: true });
             })
-            .then(setUser)
-            .catch(() => setUser(null))
             .finally(() => setLoading(false));
     }, [navigate]);
 
@@ -149,14 +145,9 @@ const Chat = () => {
     useEffect(() => {
         if (!userId) return;
 
-        fetch(`${API_URL}/api/getUserMatches`, {
-            method: "POST",
-            credentials: "include",
-        })
-            .then((r) => r.json())
-            .then(setMatches);
+        api.post("/api/getUserMatches")
+            .then((res) => setMatches(res.data));
     }, [userId]);
-
 
     /* ===== JOIN ROOM ===== */
 
@@ -172,7 +163,6 @@ const Chat = () => {
         if (socket.connected) {
             socket.emit("join_room", room);
         } else {
-            socket.off("connect");
             socket.once("connect", () => {
                 socket.emit("join_room", room);
             });
@@ -181,14 +171,8 @@ const Chat = () => {
         setRoomId(room);
         setMessages([]);
 
-        fetch(`${API_URL}/api/getMessages`, {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ roomId: room }),
-        })
-            .then((r) => r.json())
-            .then(setMessages);
+        api.post("/api/getMessages", { roomId: room })
+            .then((res) => setMessages(res.data));
     }, [activeChat, userId]);
 
     /* ===== SOCKET RECEIVE ===== */

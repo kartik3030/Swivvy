@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
-import API_URL from "../api";
+import api from "../api";
 
 const ProtectedRoute = () => {
     const [loading, setLoading] = useState(true);
@@ -9,10 +9,8 @@ const ProtectedRoute = () => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/getUserData`, {
-                    credentials: "include",
-                });
-                setIsAuth(res.ok);
+                await api.get("/api/getUserData");
+                setIsAuth(true);
             } catch {
                 setIsAuth(false);
             } finally {

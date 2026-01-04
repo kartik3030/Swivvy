@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar";
-import API_URL from "../api";
+import api from "../api";
 
 const Signup = () => {
     const navigate = useNavigate();
@@ -21,7 +21,6 @@ const Signup = () => {
     const [loading, setLoading] = useState(false);
 
     const submitLock = useRef(false);
-    const abortRef = useRef(null);
 
     function onchange(e) {
         setForm((prev) => ({
@@ -34,7 +33,8 @@ const Signup = () => {
         if (form.FName.trim().length < 2) return "First name is too short";
         if (!form.LName.trim()) return "Last name is required";
         if (!form.email.trim()) return "Email is required";
-        if (!/^\S+@\S+\.\S+$/.test(form.email)) return "Invalid email address";
+        if (!/^\S+@\S+\.\S+$/.test(form.email))
+            return "Invalid email address";
         if (!form.date) return "Date of birth is required";
         if (!form.country) return "Country is required";
 
@@ -67,41 +67,23 @@ const Signup = () => {
         setError("");
         setSuccess("");
 
-        abortRef.current = new AbortController();
-
         try {
-            const res = await fetch(`${API_URL}/api/signup`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    FName: form.FName.trim(),
-                    LName: form.LName.trim(),
-                    email: form.email.trim().toLowerCase(),
-                    date: form.date,
-                    country: form.country,
-                    password: form.password,
-                }),
-                signal: abortRef.current.signal,
+            await api.post("/api/signup", {
+                FName: form.FName.trim(),
+                LName: form.LName.trim(),
+                email: form.email.trim().toLowerCase(),
+                date: form.date,
+                country: form.country,
+                password: form.password,
             });
-
-
-            let data = {};
-            try {
-                data = await res.json();
-            } catch { }
-
-            if (!res.ok) {
-                setError(data.message || "Signup failed. Try again.");
-                return;
-            }
 
             setSuccess("Signup successful. Redirecting...");
             setTimeout(() => navigate("/login"), 1500);
         } catch (err) {
-            if (err.name !== "AbortError") {
-                setError("Something went wrong. Please try again.");
-            }
+            setError(
+                err?.response?.data?.message ||
+                "Signup failed. Try again."
+            );
         } finally {
             submitLock.current = false;
             setLoading(false);
@@ -152,8 +134,8 @@ const Signup = () => {
                                 type="text"
                                 name="LName"
                                 value={form.LName}
-                                placeholder="Last Name"
                                 onChange={onchange}
+                                placeholder="Last Name"
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
                         </div>
@@ -167,8 +149,8 @@ const Signup = () => {
                                 type="email"
                                 name="email"
                                 value={form.email}
-                                placeholder="Email"
                                 onChange={onchange}
+                                placeholder="Email"
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
                         </div>
@@ -215,8 +197,8 @@ const Signup = () => {
                                 type="password"
                                 name="password"
                                 value={form.password}
-                                placeholder="Password"
                                 onChange={onchange}
+                                placeholder="Password"
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
                         </div>
@@ -230,8 +212,8 @@ const Signup = () => {
                                 type="password"
                                 name="confirmPassword"
                                 value={form.confirmPassword}
-                                placeholder="Confirm Password"
                                 onChange={onchange}
+                                placeholder="Confirm Password"
                                 className="border-2 text-black bg-white border-white/90 hover:border-[#D8BC9B] p-4 sm:p-5 rounded-[10px] w-[70vw] sm:w-120"
                             />
                         </div>
@@ -257,7 +239,9 @@ const Signup = () => {
                                     : "bg-blue-700 hover:bg-blue-600"
                                     }`}
                             >
-                                {loading ? "Creating account..." : "Create Account"}
+                                {loading
+                                    ? "Creating account..."
+                                    : "Create Account"}
                             </button>
                         </div>
                     </form>

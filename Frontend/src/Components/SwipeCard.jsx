@@ -1,6 +1,8 @@
 import React from "react";
 import { useSwipeable } from "react-swipeable";
-import API_URL from "../api";
+import { BASE_URL } from "../api";
+
+/* ================= IMAGE RESOLVER ================= */
 
 const resolveImage = (path) => {
     if (!path) {
@@ -11,12 +13,12 @@ const resolveImage = (path) => {
     if (path.startsWith("http")) return path;
 
     // backend-relative upload
-    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+    if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
 
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
 
-
+/* ================= SWIPE CARD ================= */
 
 const SwipeCard = ({ user, onAccept, onReject, matchedUser, closeMatch }) => {
     if (!user) {
