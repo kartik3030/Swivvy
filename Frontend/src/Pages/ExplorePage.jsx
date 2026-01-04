@@ -173,7 +173,14 @@ const ExplorePage = () => {
         }
     };
 
-    if (loading) return null;
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-black text-white flex items-center justify-center">
+                <span className="text-sm text-gray-400">Loading...</span>
+            </div>
+        );
+    }
+
 
     /* ================= RENDER ================= */
 

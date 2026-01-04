@@ -3,10 +3,19 @@ import { useSwipeable } from "react-swipeable";
 import API_URL from "../api";
 
 const resolveImage = (path) => {
-    if (!path) return "/default-avatar.png";
+    if (!path) {
+        return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+    }
+
+    // already absolute
     if (path.startsWith("http")) return path;
-    return `${API_URL}${path}`;
+
+    // backend-relative upload
+    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+
+    return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
+
 
 
 const SwipeCard = ({ user, onAccept, onReject, matchedUser, closeMatch }) => {

@@ -2,6 +2,19 @@ import React, { useEffect, useRef, useState } from "react";
 import Navbar2 from "../Components/Navbar2";
 import { Link, useNavigate } from "react-router-dom";
 import API_URL from "../api";
+const resolveImage = (path) => {
+    if (!path) {
+        return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+    }
+
+    // already absolute
+    if (path.startsWith("http")) return path;
+
+    // backend-relative
+    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+
+    return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+};
 
 const ProfilePage = () => {
     const [backendData, setBackendData] = useState(null);
@@ -79,8 +92,14 @@ const ProfilePage = () => {
             setShowConfirm(false);
         }
     };
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-black text-white flex items-center justify-center">
+                <span className="text-sm text-gray-400">Loading...</span>
+            </div>
+        );
+    }
 
-    if (loading) return null;
     if (!backendData) return null;
 
     /* ================= RENDER ================= */
@@ -109,22 +128,9 @@ const ProfilePage = () => {
                 <div className="flex justify-center mt-3">
                     <div className="w-200 flex gap-6 p-4 rounded-xl bg-white/5 backdrop-blur-md border border-white/10">
                         <img
-                            src={
-                                backendData?.profilePhoto
-                                    ? `${API_URL}${backendData.profilePhoto}`
-                                    : "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg"
-                            }
+                            src={resolveImage(backendData?.profilePhoto)}
                             alt="profile"
                             className="w-40 h-50 rounded-lg object-cover"
-                        />
-                        <img
-                            src={backendData?.profilePhoto}
-                            alt="profile"
-                            className="w-40 h-50 rounded-lg object-cover"
-                            onError={(e) =>
-                            (e.currentTarget.src =
-                                "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg")
-                            }
                         />
 
                         <div>

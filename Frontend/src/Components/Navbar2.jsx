@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API_URL from "../api";
+const resolveImage = (path) => {
+    if (!path) {
+        return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+    }
+
+    // already absolute
+    if (path.startsWith("http")) return path;
+
+    // backend-relative upload
+    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+
+    return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+};
 
 const Navbar2 = () => {
     const [backendData, setBackendData] = useState(null);
@@ -29,9 +42,7 @@ const Navbar2 = () => {
         };
     }, []);
 
-    const profileSrc = backendData?.profilePhoto
-        ? `${API_URL}${backendData.profilePhoto}`
-        : "/default-avatar.png";
+    const profileSrc = resolveImage(backendData?.profilePhoto);
 
     return (
         <nav className="p-2 w-full sm:w-150 rounded-[40px] border-white/50 bg-white/10 backdrop-blur-md shadow-lg mt-1">

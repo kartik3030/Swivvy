@@ -3,6 +3,18 @@ import { useNavigate } from "react-router-dom";
 import socket from "../socket";
 import API_URL from "../api";
 
+const resolveImage = (path) => {
+    if (!path) {
+        return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+    }
+
+    if (path.startsWith("http")) return path;
+
+    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+
+    return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+};
+
 /* =========================
    CHAT LIST
 ========================= */
@@ -30,7 +42,7 @@ const ChatList = ({ matches, onSelect }) => {
                         className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
                     >
                         <img
-                            src={`${API_URL}${m.profilePhoto}`}
+                            src={resolveImage(m.profilePhoto)}
                             className="w-12 h-12 rounded-full"
                             alt=""
                         />
@@ -71,7 +83,7 @@ const ChatWindow = ({
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
                 <img
-                    src={`${API_URL}${activeChat.profilePhoto}`}
+                    src={resolveImage(activeChat.profilePhoto)}
                     className="w-10 h-10 rounded-full"
                     alt=""
                 />

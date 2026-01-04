@@ -3,6 +3,18 @@ import Navbar2 from "../Components/Navbar2";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../api";
 
+const resolveImage = (path) => {
+    if (!path) {
+        return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+    }
+
+    if (path.startsWith("http")) return path;
+
+    if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+
+    return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+};
+
 
 const EditProfile = () => {
     const navigate = useNavigate();
@@ -184,12 +196,7 @@ const EditProfile = () => {
                         <div className="border-2 rounded-[10px] w-full sm:w-150 border-white/10 bg-white/5 backdrop-blur-md shadow-lg p-3">
                             <div className="flex justify-center ml-5 mr-5">
                                 <img
-                                    src={
-                                        preview ||
-                                        (backendData.profilePhoto
-                                            ? `${API_URL}${backendData.profilePhoto}`
-                                            : "/default-avatar.png")
-                                    }
+                                    src={preview || resolveImage(backendData.profilePhoto)}
 
                                     alt="Profile"
                                     className="max-h-60 sm:max-h-80 min-h-60 sm:min-h-80 rounded-[10px] object-cover"
