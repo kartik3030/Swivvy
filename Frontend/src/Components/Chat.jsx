@@ -21,7 +21,7 @@ const ChatList = ({ matches, onSelect }) => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-black text-white overflow-y-auto">
+        <div className="min-h-145 min-w-90 bg-black text-white overflow-y-auto">
             <div className="flex items-center gap-3 p-4 border-b border-white/20">
                 <button className="sm:hidden" onClick={() => navigate("/explore")}>
                     <span className="material-symbols-outlined">chevron_left</span>
@@ -208,9 +208,11 @@ const Chat = () => {
 
         socket.emit("send_message", {
             roomId,
+            senderId: userId,
             receiverId: activeChat._id,
             text: messageInput,
         });
+
 
         setMessages((prev) => [
             ...prev,

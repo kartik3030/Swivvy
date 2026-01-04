@@ -272,23 +272,17 @@ io.on("connection", (socket) => {
         if (roomId) socket.join(roomId);
     });
 
-    socket.on("send_message", async ({ roomId, receiverId, text }) => {
-        if (!roomId || !text) return;
-
-        const msg = await Message.create({
-            roomId,
-            senderId: userId,
-            receiverId: String(receiverId),
-            text,
+    socket.on("send_message", async (msg) => {
+        const saved = await Message.create({
+            roomId: msg.roomId,
+            senderId: msg.senderId,
+            receiverId: msg.receiverId,
+            text: msg.text,
         });
 
-        io.to(roomId).emit("receive_message", msg);
-
-        const receiverSocket = onlineUsers.get(String(receiverId));
-        if (receiverSocket) {
-            io.to(receiverSocket).emit("receive_message", msg);
-        }
+        io.to(msg.roomId).emit("receive_message", saved);
     });
+
 
     socket.on("disconnect", () => {
         onlineUsers.delete(userId);
