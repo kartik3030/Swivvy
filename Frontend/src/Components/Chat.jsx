@@ -8,8 +8,10 @@ import API_URL from "../api";
 const resolveImage = (path) => {
     if (!path)
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+
     if (path.startsWith("http")) return path;
     if (path.startsWith("/uploads")) return `${API_URL}${path}`;
+
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
 
@@ -19,12 +21,12 @@ const ChatList = ({ matches, onSelect }) => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-black text-white overflow-y-auto">
             <div className="flex items-center gap-3 p-4 border-b border-white/20">
                 <button className="sm:hidden" onClick={() => navigate("/explore")}>
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
-                <h1 className="text-lg font-bold">Messages</h1>
+                <h1 className="text-lg font-bold text-orange-500">Messages</h1>
             </div>
 
             <div className="p-3 space-y-3">
@@ -32,7 +34,7 @@ const ChatList = ({ matches, onSelect }) => {
                     <div
                         key={m._id}
                         onClick={() => onSelect(m)}
-                        className="flex items-center gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
+                        className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
                     >
                         <img
                             src={resolveImage(m.profilePhoto)}
@@ -69,7 +71,6 @@ const ChatWindow = ({
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col">
-            {/* Header */}
             <div className="flex items-center gap-3 p-4 border-b border-white/20">
                 <button onClick={onBack}>
                     <span className="material-symbols-outlined">chevron_left</span>
@@ -82,12 +83,11 @@ const ChatWindow = ({
                 <p className="font-bold">{activeChat.FName}</p>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {messages.map((msg) => (
                     <div
                         key={msg._id}
-                        className={`max-w-[75%] px-4 py-2 rounded-xl text-white break-words ${msg.senderId === userId
+                        className={`max-w-[75%] px-4 py-2 rounded-xl break-words text-white ${msg.senderId === userId
                             ? "ml-auto bg-orange-600"
                             : "mr-auto bg-white/20"
                             }`}
@@ -98,7 +98,6 @@ const ChatWindow = ({
                 <div ref={bottomRef} />
             </div>
 
-            {/* Input */}
             <div className="p-3 border-t border-white/20 flex gap-2">
                 <input
                     value={messageInput}
@@ -107,10 +106,7 @@ const ChatWindow = ({
                     className="flex-1 bg-white/10 px-4 py-2 rounded-full outline-none text-white"
                     placeholder="Type a message"
                 />
-                <button
-                    onClick={onSend}
-                    className="bg-orange-600 px-4 rounded-full"
-                >
+                <button onClick={onSend} className="bg-orange-600 px-4 rounded-full">
                     <span className="material-symbols-outlined">send</span>
                 </button>
             </div>
@@ -130,7 +126,7 @@ const Chat = () => {
     const [loading, setLoading] = useState(true);
 
     const navigate = useNavigate();
-    const userId = user?._id;
+    const userId = user?._id ? String(user._id) : null;
 
     /* ===== AUTH ===== */
 
@@ -146,7 +142,7 @@ const Chat = () => {
             .then(setUser)
             .catch(() => setUser(null))
             .finally(() => setLoading(false));
-    }, []);
+    }, [navigate]);
 
     /* ===== FETCH MATCHES ===== */
 
@@ -171,10 +167,11 @@ const Chat = () => {
                 ? `${userId}_${activeChat._id}`
                 : `${activeChat._id}_${userId}`;
 
+        socket.emit("leave_all");      // critical
+        socket.emit("join_room", room);
+
         setRoomId(room);
         setMessages([]);
-
-        socket.emit("join_room", room);
 
         fetch(`${API_URL}/api/getMessages`, {
             method: "POST",
@@ -183,23 +180,21 @@ const Chat = () => {
             body: JSON.stringify({ roomId: room }),
         })
             .then((r) => r.json())
-            .then((data) => {
-                const normalized = data.map((m) => ({
-                    _id: m._id,
-                    senderId: m.senderId,
-                    text: m.text,
-                }));
-                setMessages(normalized);
-            });
+            .then(setMessages);
     }, [activeChat, userId]);
 
     /* ===== SOCKET RECEIVE ===== */
 
     useEffect(() => {
+        if (!roomId) return;
+
         const onReceive = (msg) => {
-            setMessages((prev) =>
-                msg.roomId === roomId ? [...prev, msg] : prev
-            );
+            if (msg.roomId !== roomId) return;
+
+            setMessages((prev) => {
+                if (prev.some((m) => m._id === msg._id)) return prev;
+                return [...prev, msg];
+            });
         };
 
         socket.on("receive_message", onReceive);
@@ -211,20 +206,21 @@ const Chat = () => {
     const sendChat = () => {
         if (!messageInput.trim() || !roomId) return;
 
-        const msg = {
-            _id: Date.now(),
-            roomId,
-            senderId: userId,
-            text: messageInput,
-        };
-
-        setMessages((prev) => [...prev, msg]);
-
         socket.emit("send_message", {
             roomId,
             receiverId: activeChat._id,
             text: messageInput,
         });
+
+        setMessages((prev) => [
+            ...prev,
+            {
+                _id: `local-${Date.now()}`,
+                roomId,
+                senderId: userId,
+                text: messageInput,
+            },
+        ]);
 
         setMessageInput("");
     };

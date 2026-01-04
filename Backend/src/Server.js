@@ -10,6 +10,9 @@ const path = require("path");
 const fs = require("fs");
 const http = require("http");
 const { Server } = require("socket.io");
+const cookie = require("cookie");
+
+const onlineUsers = new Map(); // userId -> socketId
 
 /* ================= ENV GUARD ================= */
 
@@ -41,7 +44,6 @@ app.use(
         credentials: true,
     })
 );
-
 
 /* ================= AUTH ================= */
 
@@ -122,23 +124,13 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
-    });
+    res.clearCookie("token", cookieOptions);
     res.json({ success: true });
 });
 
-
 app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
     await User.findByIdAndDelete(req.user.id);
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: isProd ? "none" : "lax",
-    });
-
+    res.clearCookie("token", cookieOptions);
     res.json({ success: true });
 });
 
@@ -146,12 +138,10 @@ app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
 
 app.post("/api/rightSwipe", requireAuth, async (req, res) => {
     const { userOnFeed } = req.body;
-
     if (!userOnFeed)
         return res.status(400).json({ error: "userOnFeed required" });
 
     const myId = req.user.id;
-
     const me = await User.findById(myId);
     const other = await User.findById(userOnFeed);
 
@@ -176,7 +166,6 @@ app.post("/api/rightSwipe", requireAuth, async (req, res) => {
     res.json({ match });
 });
 
-
 app.post("/api/leftSwipe", requireAuth, async (req, res) => {
     const me = await User.findById(req.user.id);
     if (!me.swipedUsers.includes(req.body.userOnFeed)) {
@@ -198,18 +187,11 @@ app.post(
     requireAuth,
     upload.single("profilePhoto"),
     async (req, res) => {
-
-        const photo = req.file
-            ? `/uploads/${req.file.filename}`
-            : undefined;
-
+        const photo = req.file ? `/uploads/${req.file.filename}` : undefined;
 
         const user = await User.findByIdAndUpdate(
             req.user.id,
-            {
-                ...req.body,
-                ...(photo && { profilePhoto: photo }),
-            },
+            { ...req.body, ...(photo && { profilePhoto: photo }) },
             { new: true }
         ).select("-password");
 
@@ -253,66 +235,77 @@ app.post("/api/getMessages", requireAuth, async (req, res) => {
 /* ================= SOCKET ================= */
 
 const server = http.createServer(app);
-const cookie = require("cookie");
 
 const io = new Server(server, {
     cors: {
         origin: CLIENT_URL,
         credentials: true,
+        methods: ["GET", "POST"],
     },
     transports: ["polling", "websocket"],
-    allowEIO3: true,
 });
-
 
 io.use((socket, next) => {
     try {
         const cookies = cookie.parse(socket.handshake.headers.cookie || "");
-        const token = cookies.token;
+        const token = cookies.token || socket.handshake.auth?.token;
         if (!token) throw new Error();
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        socket.user = decoded;
-
+        socket.user = jwt.verify(token, process.env.JWT_SECRET);
         next();
     } catch {
         next(new Error("Unauthorized"));
     }
 });
 
+io.on("connection", (socket) => {
+    const userId = String(socket.user.id);
+    onlineUsers.set(userId, socket.id);
 
+    socket.on("leave_all", () => {
+        for (const room of socket.rooms) {
+            if (room !== socket.id) socket.leave(room);
+        }
+    });
 
-io.on("connection", socket => {
-    socket.on("join_room", roomId => roomId && socket.join(roomId));
+    socket.on("join_room", (roomId) => {
+        if (roomId) socket.join(roomId);
+    });
 
-    socket.on("send_message", async data => {
-        if (!socket.rooms.has(data.roomId)) return;
+    socket.on("send_message", async ({ roomId, receiverId, text }) => {
+        if (!roomId || !text) return;
 
         const msg = await Message.create({
-            roomId: data.roomId,
-            senderId: socket.user.id,
-            receiverId: data.receiverId,
-            text: data.text,
+            roomId,
+            senderId: userId,
+            receiverId: String(receiverId),
+            text,
         });
 
-        io.to(data.roomId).emit("receive_message", msg);
+        io.to(roomId).emit("receive_message", msg);
+
+        const receiverSocket = onlineUsers.get(String(receiverId));
+        if (receiverSocket) {
+            io.to(receiverSocket).emit("receive_message", msg);
+        }
     });
 
+    socket.on("disconnect", () => {
+        onlineUsers.delete(userId);
+    });
 });
 
+/* ================= FRONTEND BUILD ================= */
 
-
-/* ================= frontend build in production after API routes ================= */
 if (isProd) {
-    const distPath = path.join(__dirname, "../frontend/dist");
-
-    app.use(express.static(distPath));
-
-    app.get("*", (_, res) => {
-        res.sendFile(path.join(distPath, "index.html"));
-    });
+    const distPath = path.join(__dirname, "frontend", "dist");
+    if (fs.existsSync(distPath)) {
+        app.use(express.static(distPath));
+        app.get("*", (_, res) =>
+            res.sendFile(path.join(distPath, "index.html"))
+        );
+    }
 }
-
 
 /* ================= BOOT ================= */
 
