@@ -144,18 +144,20 @@ const Chat = () => {
 
     /* SOCKET LISTENER (SAFE, NO DUPLICATES) */
     useEffect(() => {
-        if (!userId || !roomId) return;
+        if (!roomId) return;
 
         const onReceive = (msg) => {
             if (msg.roomId !== roomId) return;
             setMessages((prev) => [...prev, msg]);
         };
 
-        socket.off("receive_message");
         socket.on("receive_message", onReceive);
 
-        return () => socket.off("receive_message", onReceive);
-    }, [roomId, userId]);
+        return () => {
+            socket.off("receive_message", onReceive);
+        };
+    }, [roomId]);
+
 
     /* FETCH MATCHES */
     useEffect(() => {
