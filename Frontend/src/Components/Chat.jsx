@@ -70,7 +70,7 @@ const ChatWindow = ({
     }, [messages]);
 
     return (
-        <div className="min-h-screen bg-black text-white flex flex-col">
+        <div className="min-h-145 min-w-90 bg-black text-white flex flex-col">
             <div className="flex items-center gap-3 p-4 border-b border-white/20">
                 <button onClick={onBack}>
                     <span className="material-symbols-outlined">chevron_left</span>
@@ -157,18 +157,40 @@ const Chat = () => {
             .then(setMatches);
     }, [userId]);
 
+    /* ===== SOCKET AUTH REFRESH ===== */
+
+    useEffect(() => {
+        if (!userId) return;
+
+        socket.auth = {
+            token: document.cookie
+                .split("; ")
+                .find((c) => c.startsWith("token="))
+                ?.split("=")[1],
+        };
+
+        if (!socket.connected) socket.connect();
+    }, [userId]);
+
     /* ===== JOIN ROOM ===== */
 
     useEffect(() => {
         if (!activeChat || !userId) return;
 
-        const room =
-            userId < activeChat._id
-                ? `${userId}_${activeChat._id}`
-                : `${activeChat._id}_${userId}`;
+        const a = String(userId);
+        const b = String(activeChat._id);
+        const room = a < b ? `${a}_${b}` : `${b}_${a}`;
 
-        socket.emit("leave_all");      // critical
-        socket.emit("join_room", room);
+        socket.emit("leave_all");
+
+        if (socket.connected) {
+            socket.emit("join_room", room);
+        } else {
+            socket.off("connect");
+            socket.once("connect", () => {
+                socket.emit("join_room", room);
+            });
+        }
 
         setRoomId(room);
         setMessages([]);
@@ -212,7 +234,6 @@ const Chat = () => {
             receiverId: activeChat._id,
             text: messageInput,
         });
-
 
         setMessages((prev) => [
             ...prev,
