@@ -286,6 +286,8 @@ io.on("connection", socket => {
     socket.on("join_room", roomId => roomId && socket.join(roomId));
 
     socket.on("send_message", async data => {
+        if (!socket.rooms.has(data.roomId)) return;
+
         const msg = await Message.create({
             roomId: data.roomId,
             senderId: socket.user.id,
@@ -295,6 +297,7 @@ io.on("connection", socket => {
 
         io.to(data.roomId).emit("receive_message", msg);
     });
+
 });
 
 
