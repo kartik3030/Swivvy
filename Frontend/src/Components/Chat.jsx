@@ -30,7 +30,7 @@ const ChatList = ({ matches, onSelect }) => {
                         className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
                     >
                         <img
-                            src={m.profilePhoto}
+                            src={`${API_URL}${m.profilePhoto}`}
                             className="w-12 h-12 rounded-full"
                             alt=""
                         />
@@ -71,7 +71,7 @@ const ChatWindow = ({
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
                 <img
-                    src={activeChat.profilePhoto}
+                    src={`${API_URL}${activeChat.profilePhoto}`}
                     className="w-10 h-10 rounded-full"
                     alt=""
                 />

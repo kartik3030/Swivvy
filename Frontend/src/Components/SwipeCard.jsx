@@ -1,13 +1,13 @@
 import React from "react";
 import { useSwipeable } from "react-swipeable";
-
-const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+import API_URL from "../api";
 
 const resolveImage = (path) => {
     if (!path) return "/default-avatar.png";
     if (path.startsWith("http")) return path;
-    return `${BASE_URL}${path}`;
+    return `${API_URL}${path}`;
 };
+
 
 const SwipeCard = ({ user, onAccept, onReject, matchedUser, closeMatch }) => {
     if (!user) {

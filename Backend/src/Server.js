@@ -119,6 +119,13 @@ app.post("/api/logout", (req, res) => {
     res.json({ success: true });
 });
 
+
+app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
+    await User.findByIdAndDelete(req.user.id);
+    res.clearCookie("token", cookieOptions);
+    res.json({ success: true });
+});
+
 /* ================= SWIPE ================= */
 
 app.post("/api/rightSwipe", requireAuth, async (req, res) => {

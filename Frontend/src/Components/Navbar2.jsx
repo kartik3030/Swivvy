@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API_URL from "../api";
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL;
-
 const Navbar2 = () => {
     const [backendData, setBackendData] = useState(null);
 
@@ -32,7 +30,7 @@ const Navbar2 = () => {
     }, []);
 
     const profileSrc = backendData?.profilePhoto
-        ? `${BASE_URL}${backendData.profilePhoto}`
+        ? `${API_URL}${backendData.profilePhoto}`
         : "/default-avatar.png";
 
     return (

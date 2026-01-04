@@ -109,6 +109,15 @@ const ProfilePage = () => {
                 <div className="flex justify-center mt-3">
                     <div className="w-200 flex gap-6 p-4 rounded-xl bg-white/5 backdrop-blur-md border border-white/10">
                         <img
+                            src={
+                                backendData?.profilePhoto
+                                    ? `${API_URL}${backendData.profilePhoto}`
+                                    : "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg"
+                            }
+                            alt="profile"
+                            className="w-40 h-50 rounded-lg object-cover"
+                        />
+                        <img
                             src={backendData?.profilePhoto}
                             alt="profile"
                             className="w-40 h-50 rounded-lg object-cover"

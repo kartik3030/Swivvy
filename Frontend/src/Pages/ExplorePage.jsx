@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Aside from "../Components/Aside";
 import Navbar2 from "../Components/Navbar2";
 import SwipeCard from "../Components/SwipeCard";
@@ -14,6 +15,8 @@ const ExplorePage = () => {
     const [loading, setLoading] = useState(true);
 
     const swipeLock = useRef(false);
+    const navigate = useNavigate();
+
 
     /* ================= AUTH CHECK ================= */
 
