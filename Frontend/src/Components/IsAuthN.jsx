@@ -12,10 +12,10 @@ const IsAuthN = () => {
                 const res = await fetch(`${API_URL}/api/getUserData`, {
                     credentials: "include",
                 });
-
-                if (res.ok) setIsAuth(true);
-            } catch { }
-            finally {
+                setIsAuth(res.ok);
+            } catch {
+                setIsAuth(false);
+            } finally {
                 setLoading(false);
             }
         };
@@ -25,9 +25,11 @@ const IsAuthN = () => {
 
     if (loading) return null;
 
-    return isAuth
-        ? <Navigate to="/explore" replace />
-        : <Navigate to="/" replace />;
+    return isAuth ? (
+        <Navigate to="/explore" replace />
+    ) : (
+        <Navigate to="/landing" replace />
+    );
 };
 
 export default IsAuthN;

@@ -15,14 +15,15 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Entry decision */}
+        {/* ENTRY DECISION */}
         <Route path="/" element={<IsAuthN />} />
 
-        {/* Public */}
+        {/* PUBLIC */}
+        <Route path="/landing" element={<Landing />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected */}
+        {/* PROTECTED */}
         <Route element={<ProtectedRoute />}>
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/profile" element={<ProfilePage />} />

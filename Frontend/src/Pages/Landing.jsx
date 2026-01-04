@@ -9,6 +9,7 @@ const Landing = () => {
 
     return (
         <>
+
             <Navbar />
             <main className='cursor-default'>
                 <div className='bg-black '>

@@ -17,7 +17,6 @@ const ExplorePage = () => {
     const swipeLock = useRef(false);
     const navigate = useNavigate();
 
-
     /* ================= AUTH CHECK ================= */
 
     useEffect(() => {
@@ -29,8 +28,12 @@ const ExplorePage = () => {
                     credentials: "include",
                 });
 
-                if (!res.ok) {
-                    setLoading(false);
+                if (res.status === 401) {
+                    if (!cancelled) {
+                        setUser(null);
+                        setLoading(false);
+                        navigate("/");
+                    }
                     return;
                 }
 
@@ -42,7 +45,10 @@ const ExplorePage = () => {
                 }
             } catch (err) {
                 console.error("Auth error:", err);
-                setLoading(false);
+                if (!cancelled) {
+                    setLoading(false);
+                    navigate("/");
+                }
             }
         };
 
@@ -51,7 +57,7 @@ const ExplorePage = () => {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [navigate]);
 
     /* ================= FETCH USERS ================= */
 
@@ -117,12 +123,8 @@ const ExplorePage = () => {
             const res = await fetch(`${API_URL}/api/rightSwipe`, {
                 method: "POST",
                 credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    userOnFeed: currentUser._id,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userOnFeed: currentUser._id }),
             });
 
             if (!res.ok) throw new Error("Right swipe failed");
@@ -154,12 +156,8 @@ const ExplorePage = () => {
             const res = await fetch(`${API_URL}/api/leftSwipe`, {
                 method: "POST",
                 credentials: "include",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    userOnFeed: currentUser._id,
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userOnFeed: currentUser._id }),
             });
 
             if (!res.ok) throw new Error("Left swipe failed");
@@ -180,7 +178,6 @@ const ExplorePage = () => {
             </div>
         );
     }
-
 
     /* ================= RENDER ================= */
 
@@ -213,13 +210,7 @@ const ExplorePage = () => {
                                 disabled={!currentUser || isSwiping}
                                 className="flex items-center justify-center w-20 h-20 p-3 border-2 border-red-900 rounded-full"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 -960 960 960"
-                                    width="60"
-                                    height="60"
-                                    fill="#7F1D1D"
-                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="60" height="60" fill="#7F1D1D">
                                     <path d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z" />
                                 </svg>
                             </button>
@@ -229,13 +220,7 @@ const ExplorePage = () => {
                                 disabled={!currentUser || isSwiping}
                                 className="flex items-center justify-center w-20 h-20 p-3 border-2 border-green-700 rounded-full"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 -960 960 960"
-                                    width="60"
-                                    height="60"
-                                    fill="#15803D"
-                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="60" height="60" fill="#15803D">
                                     <path d="M378-246 154-470l43-43 181 181 384-384 43 43-427 427Z" />
                                 </svg>
                             </button>
@@ -244,13 +229,7 @@ const ExplorePage = () => {
                                 onClick={() => window.location.assign("/chatPage")}
                                 className="sm:hidden flex items-center justify-center w-12 h-12 p-3 border-2 border-yellow-400 rounded-full"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 -960 960 960"
-                                    width="24"
-                                    height="24"
-                                    fill="#FACC15"
-                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="24" height="24" fill="#FACC15">
                                     <path d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Z" />
                                 </svg>
                             </button>

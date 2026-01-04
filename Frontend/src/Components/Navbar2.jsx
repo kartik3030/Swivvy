@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API_URL from "../api";
+
 const resolveImage = (path) => {
     if (!path) {
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
     }
-
-    // already absolute
     if (path.startsWith("http")) return path;
-
-    // backend-relative upload
     if (path.startsWith("/uploads")) return `${API_URL}${path}`;
-
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
 
 const Navbar2 = () => {
     const [backendData, setBackendData] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         let mounted = true;
@@ -24,16 +21,21 @@ const Navbar2 = () => {
         (async () => {
             try {
                 const res = await fetch(`${API_URL}/api/getUserData`, {
-                    method: "GET",
                     credentials: "include",
                 });
 
-                if (!res.ok) return;
+                if (res.status === 401) {
+                    if (mounted) {
+                        setBackendData(null);
+                        navigate("/", { replace: true });
+                    }
+                    return;
+                }
 
                 const data = await res.json();
                 if (mounted) setBackendData(data);
-            } catch (err) {
-                console.error("Navbar fetch error:", err);
+            } catch {
+                if (mounted) setBackendData(null);
             }
         })();
 

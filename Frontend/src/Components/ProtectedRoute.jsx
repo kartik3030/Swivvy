@@ -12,7 +12,6 @@ const ProtectedRoute = () => {
                 const res = await fetch(`${API_URL}/api/getUserData`, {
                     credentials: "include",
                 });
-
                 setIsAuth(res.ok);
             } catch {
                 setIsAuth(false);
@@ -24,12 +23,10 @@ const ProtectedRoute = () => {
         checkAuth();
     }, []);
 
-    if (loading) {
-        return null;
-    }
+    if (loading) return null;
 
     if (!isAuth) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/" replace />;
     }
 
     return <Outlet />;

@@ -128,21 +128,41 @@ const Chat = () => {
     const [messages, setMessages] = useState([]);
     const [messageInput, setMessageInput] = useState("");
     const [roomId, setRoomId] = useState(null);
+    const [loading, setLoading] = useState(true);
 
+    const navigate = useNavigate();
     const userId = user?._id;
 
-    /* FETCH LOGGED-IN USER */
+    /* ================= AUTH ================= */
+
     useEffect(() => {
+        let cancelled = false;
+
         fetch(`${API_URL}/api/getUserData`, { credentials: "include" })
             .then((res) => {
-                if (!res.ok) throw new Error("Unauthorized");
+                if (res.status === 401) {
+                    navigate("/", { replace: true });
+                    throw new Error("Unauthorized");
+                }
                 return res.json();
             })
-            .then(setUser)
-            .catch(() => setUser(null));
+            .then((data) => {
+                if (!cancelled) setUser(data);
+            })
+            .catch(() => {
+                if (!cancelled) setUser(null);
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
-    /* SOCKET LISTENER (CONNECTED + ROOM SAFE) */
+    /* ================= SOCKET LISTENER ================= */
+
     useEffect(() => {
         if (!roomId) return;
 
@@ -164,7 +184,8 @@ const Chat = () => {
         };
     }, [roomId]);
 
-    /* FETCH MATCHES */
+    /* ================= FETCH MATCHES ================= */
+
     useEffect(() => {
         if (!userId) return;
 
@@ -176,7 +197,8 @@ const Chat = () => {
             .then(setMatches);
     }, [userId]);
 
-    /* JOIN ROOM + LOAD HISTORY (CONNECTION SAFE) */
+    /* ================= JOIN ROOM ================= */
+
     useEffect(() => {
         if (!activeChat || !userId) return;
 
@@ -206,7 +228,8 @@ const Chat = () => {
             .then(setMessages);
     }, [activeChat, userId]);
 
-    /* SEND MESSAGE (SERVER AUTHORITY) */
+    /* ================= SEND MESSAGE ================= */
+
     const sendChat = () => {
         if (!messageInput.trim() || !roomId) return;
 
@@ -219,7 +242,7 @@ const Chat = () => {
         setMessageInput("");
     };
 
-    if (!userId) return null;
+    if (loading) return null;
 
     return activeChat ? (
         <ChatWindow
