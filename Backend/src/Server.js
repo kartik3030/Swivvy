@@ -47,12 +47,10 @@ app.use(
 
 const cookieOptions = {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
-
-
 
 const requireAuth = (req, res, next) => {
     const token = req.cookies?.token;
@@ -77,7 +75,16 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_")),
 });
 
-const upload = multer({ storage });
+const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_, file, cb) => {
+        if (!file.mimetype.startsWith("image/"))
+            return cb(new Error("Only images allowed"));
+        cb(null, true);
+    },
+});
+
 app.use("/uploads", express.static(uploadsDir));
 
 /* ================= ROUTES ================= */
@@ -115,14 +122,23 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-    res.clearCookie("token", cookieOptions);
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+    });
     res.json({ success: true });
 });
 
 
 app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
     await User.findByIdAndDelete(req.user.id);
-    res.clearCookie("token", cookieOptions);
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+    });
+
     res.json({ success: true });
 });
 
@@ -130,12 +146,17 @@ app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
 
 app.post("/api/rightSwipe", requireAuth, async (req, res) => {
     const { userOnFeed } = req.body;
+
+    if (!userOnFeed)
+        return res.status(400).json({ error: "userOnFeed required" });
+
     const myId = req.user.id;
 
     const me = await User.findById(myId);
     const other = await User.findById(userOnFeed);
 
-    if (!me || !other) return res.status(404).json({ error: "User not found" });
+    if (!me || !other)
+        return res.status(404).json({ error: "User not found" });
 
     if (me.swipedUsers.includes(userOnFeed))
         return res.json({ match: false });
@@ -154,6 +175,7 @@ app.post("/api/rightSwipe", requireAuth, async (req, res) => {
     await me.save();
     res.json({ match });
 });
+
 
 app.post("/api/leftSwipe", requireAuth, async (req, res) => {
     const me = await User.findById(req.user.id);
@@ -176,10 +198,6 @@ app.post(
     requireAuth,
     upload.single("profilePhoto"),
     async (req, res) => {
-        const baseUrl =
-            process.env.NODE_ENV === "production"
-                ? `https://${req.get("host")}`
-                : `${req.protocol}://${req.get("host")}`;
 
         const photo = req.file
             ? `/uploads/${req.file.filename}`
@@ -223,6 +241,9 @@ app.post("/api/getUserMatches", requireAuth, async (req, res) => {
 /* ================= MESSAGES ================= */
 
 app.post("/api/getMessages", requireAuth, async (req, res) => {
+    if (!req.body.roomId)
+        return res.status(400).json({ error: "roomId required" });
+
     const messages = await Message.find({ roomId: req.body.roomId }).sort({
         createdAt: 1,
     });
@@ -239,15 +260,20 @@ const io = new Server(server, {
         origin: CLIENT_URL,
         credentials: true,
     },
-    transports: ["websocket"],
+    transports: ["polling", "websocket"],
+    allowEIO3: true,
 });
+
 
 io.use((socket, next) => {
     try {
         const cookies = cookie.parse(socket.handshake.headers.cookie || "");
         const token = cookies.token;
         if (!token) throw new Error();
-        jwt.verify(token, process.env.JWT_SECRET);
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.user = decoded;
+
         next();
     } catch {
         next(new Error("Unauthorized"));
@@ -255,13 +281,35 @@ io.use((socket, next) => {
 });
 
 
+
 io.on("connection", socket => {
     socket.on("join_room", roomId => roomId && socket.join(roomId));
+
     socket.on("send_message", async data => {
-        const msg = await Message.create(data);
+        const msg = await Message.create({
+            roomId: data.roomId,
+            senderId: socket.user.id,
+            receiverId: data.receiverId,
+            text: data.text,
+        });
+
         io.to(data.roomId).emit("receive_message", msg);
     });
 });
+
+
+
+/* ================= frontend build in production after API routes ================= */
+if (isProd) {
+    const distPath = path.join(__dirname, "../frontend/dist");
+
+    app.use(express.static(distPath));
+
+    app.get("*", (_, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+    });
+}
+
 
 /* ================= BOOT ================= */
 

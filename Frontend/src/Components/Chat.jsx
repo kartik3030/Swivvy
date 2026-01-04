@@ -142,25 +142,20 @@ const Chat = () => {
             .catch(() => setUser(null));
     }, []);
 
-    /* SOCKET LISTENER (ROOM-SAFE) */
+    /* SOCKET LISTENER (SAFE, NO DUPLICATES) */
     useEffect(() => {
         if (!userId || !roomId) return;
 
         const onReceive = (msg) => {
             if (msg.roomId !== roomId) return;
-
-            setMessages((prev) => {
-                if (prev.some((m) => m._id === msg._id)) return prev;
-                return [...prev, msg];
-            });
+            setMessages((prev) => [...prev, msg]);
         };
 
+        socket.off("receive_message");
         socket.on("receive_message", onReceive);
 
-        return () => {
-            socket.off("receive_message", onReceive);
-        };
-    }, [userId, roomId]);
+        return () => socket.off("receive_message", onReceive);
+    }, [roomId, userId]);
 
     /* FETCH MATCHES */
     useEffect(() => {
@@ -174,7 +169,7 @@ const Chat = () => {
             .then(setMatches);
     }, [userId]);
 
-    /* JOIN ROOM + LOAD HISTORY (NO OVERWRITE) */
+    /* JOIN ROOM + LOAD HISTORY */
     useEffect(() => {
         if (!activeChat || !userId) return;
 
@@ -184,6 +179,7 @@ const Chat = () => {
                 : `${activeChat._id}_${userId}`;
 
         setRoomId(room);
+        setMessages([]);
 
         const join = () => socket.emit("join_room", room);
         socket.connected ? join() : socket.once("connect", join);
@@ -195,28 +191,19 @@ const Chat = () => {
             body: JSON.stringify({ roomId: room }),
         })
             .then((r) => r.json())
-            .then((history) => {
-                setMessages((prev) => {
-                    const ids = new Set(prev.map((m) => m._id));
-                    return [...history.filter((m) => !ids.has(m._id)), ...prev];
-                });
-            });
+            .then(setMessages);
     }, [activeChat, userId]);
 
-    /* SEND MESSAGE (OPTIMISTIC) */
+    /* SEND MESSAGE (SERVER IS SOURCE OF TRUTH) */
     const sendChat = () => {
         if (!messageInput.trim() || !roomId) return;
 
-        const msg = {
-            _id: crypto.randomUUID(),
+        socket.emit("send_message", {
             roomId,
-            senderId: userId,
             receiverId: activeChat._id,
             text: messageInput,
-        };
+        });
 
-        setMessages((prev) => [...prev, msg]);
-        socket.emit("send_message", msg);
         setMessageInput("");
     };
 
