@@ -73,6 +73,7 @@ const Signup = () => {
             const res = await fetch(`${API_URL}/api/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify({
                     FName: form.FName.trim(),
                     LName: form.LName.trim(),
@@ -83,6 +84,7 @@ const Signup = () => {
                 }),
                 signal: abortRef.current.signal,
             });
+
 
             let data = {};
             try {

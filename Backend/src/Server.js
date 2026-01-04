@@ -223,17 +223,6 @@ app.post("/api/getMessages", requireAuth, async (req, res) => {
     res.json(messages);
 });
 
-/* ================= FRONTEND ================= */
-
-const distPath = path.resolve(__dirname, "../../frontend/dist");
-
-if (fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
-    app.get(/^\/(?!api).*/, (_, res) =>
-        res.sendFile(path.join(distPath, "index.html"))
-    );
-}
-
 /* ================= SOCKET ================= */
 
 const server = http.createServer(app);

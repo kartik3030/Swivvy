@@ -68,8 +68,7 @@ const Login = () => {
                 return;
             }
 
-            // ✅ Cookie already set by backend
-            // ❌ No localStorage token (correct)
+
 
             setForm({ email: "", password: "" });
             navigate("/explore");
