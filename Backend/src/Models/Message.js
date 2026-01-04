@@ -1,5 +1,3 @@
-const mongoose = require("mongoose");
-
 const messageSchema = new mongoose.Schema(
     {
         roomId: {
@@ -17,7 +15,7 @@ const messageSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
-        message: {
+        text: {
             type: String,
             required: true,
             maxlength: 2000,
