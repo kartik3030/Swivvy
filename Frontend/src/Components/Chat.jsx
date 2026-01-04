@@ -3,31 +3,28 @@ import { useNavigate } from "react-router-dom";
 import socket from "../socket";
 import API_URL from "../api";
 
+/* ================= IMAGE RESOLVER ================= */
+
 const resolveImage = (path) => {
-    if (!path) {
+    if (!path)
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
-    }
     if (path.startsWith("http")) return path;
     if (path.startsWith("/uploads")) return `${API_URL}${path}`;
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
 
-/* =========================
-   CHAT LIST
-========================= */
+/* ================= CHAT LIST ================= */
 
 const ChatList = ({ matches, onSelect }) => {
     const navigate = useNavigate();
 
     return (
-        <div className="h-full sm:h-145 sm:w-95 overflow-y-auto">
+        <div className="min-h-screen bg-black text-white">
             <div className="flex items-center gap-3 p-4 border-b border-white/20">
                 <button className="sm:hidden" onClick={() => navigate("/explore")}>
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent">
-                    Messages
-                </h1>
+                <h1 className="text-lg font-bold">Messages</h1>
             </div>
 
             <div className="p-3 space-y-3">
@@ -35,11 +32,11 @@ const ChatList = ({ matches, onSelect }) => {
                     <div
                         key={m._id}
                         onClick={() => onSelect(m)}
-                        className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
+                        className="flex items-center gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
                     >
                         <img
                             src={resolveImage(m.profilePhoto)}
-                            className="w-12 h-12 rounded-full"
+                            className="w-12 h-12 rounded-full object-cover"
                             alt=""
                         />
                         <div>
@@ -53,9 +50,7 @@ const ChatList = ({ matches, onSelect }) => {
     );
 };
 
-/* =========================
-   CHAT WINDOW
-========================= */
+/* ================= CHAT WINDOW ================= */
 
 const ChatWindow = ({
     activeChat,
@@ -73,26 +68,28 @@ const ChatWindow = ({
     }, [messages]);
 
     return (
-        <div className="h-full sm:h-145 sm:w-95 flex flex-col">
+        <div className="min-h-screen bg-black text-white flex flex-col">
+            {/* Header */}
             <div className="flex items-center gap-3 p-4 border-b border-white/20">
                 <button onClick={onBack}>
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
                 <img
                     src={resolveImage(activeChat.profilePhoto)}
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full object-cover"
                     alt=""
                 />
                 <p className="font-bold">{activeChat.FName}</p>
             </div>
 
+            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
                 {messages.map((msg) => (
                     <div
                         key={msg._id}
-                        className={`max-w-[75%] px-3 py-2 rounded-lg ${msg.senderId === userId
+                        className={`max-w-[75%] px-4 py-2 rounded-xl text-white break-words ${msg.senderId === userId
                             ? "ml-auto bg-orange-600"
-                            : "mr-auto bg-white/10"
+                            : "mr-auto bg-white/20"
                             }`}
                     >
                         {msg.text}
@@ -101,15 +98,19 @@ const ChatWindow = ({
                 <div ref={bottomRef} />
             </div>
 
+            {/* Input */}
             <div className="p-3 border-t border-white/20 flex gap-2">
                 <input
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && onSend()}
-                    className="flex-1 bg-white/10 px-3 py-2 rounded-lg"
-                    placeholder="Type a message…"
+                    className="flex-1 bg-white/10 px-4 py-2 rounded-full outline-none text-white"
+                    placeholder="Type a message"
                 />
-                <button onClick={onSend}>
+                <button
+                    onClick={onSend}
+                    className="bg-orange-600 px-4 rounded-full"
+                >
                     <span className="material-symbols-outlined">send</span>
                 </button>
             </div>
@@ -117,9 +118,7 @@ const ChatWindow = ({
     );
 };
 
-/* =========================
-   MAIN CHAT
-========================= */
+/* ================= MAIN CHAT ================= */
 
 const Chat = () => {
     const [user, setUser] = useState(null);
@@ -133,11 +132,9 @@ const Chat = () => {
     const navigate = useNavigate();
     const userId = user?._id;
 
-    /* ================= AUTH ================= */
+    /* ===== AUTH ===== */
 
     useEffect(() => {
-        let cancelled = false;
-
         fetch(`${API_URL}/api/getUserData`, { credentials: "include" })
             .then((res) => {
                 if (res.status === 401) {
@@ -146,45 +143,12 @@ const Chat = () => {
                 }
                 return res.json();
             })
-            .then((data) => {
-                if (!cancelled) setUser(data);
-            })
-            .catch(() => {
-                if (!cancelled) setUser(null);
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
-
-        return () => {
-            cancelled = true;
-        };
+            .then(setUser)
+            .catch(() => setUser(null))
+            .finally(() => setLoading(false));
     }, []);
 
-    /* ================= SOCKET LISTENER ================= */
-
-    useEffect(() => {
-        if (!roomId) return;
-
-        const onReceive = (msg) => {
-            if (msg.roomId !== roomId) return;
-            setMessages((prev) => [...prev, msg]);
-        };
-
-        const attach = () => socket.on("receive_message", onReceive);
-
-        if (socket.connected) {
-            attach();
-        } else {
-            socket.once("connect", attach);
-        }
-
-        return () => {
-            socket.off("receive_message", onReceive);
-        };
-    }, [roomId]);
-
-    /* ================= FETCH MATCHES ================= */
+    /* ===== FETCH MATCHES ===== */
 
     useEffect(() => {
         if (!userId) return;
@@ -197,7 +161,7 @@ const Chat = () => {
             .then(setMatches);
     }, [userId]);
 
-    /* ================= JOIN ROOM ================= */
+    /* ===== JOIN ROOM ===== */
 
     useEffect(() => {
         if (!activeChat || !userId) return;
@@ -210,13 +174,7 @@ const Chat = () => {
         setRoomId(room);
         setMessages([]);
 
-        const join = () => socket.emit("join_room", room);
-
-        if (socket.connected) {
-            join();
-        } else {
-            socket.once("connect", join);
-        }
+        socket.emit("join_room", room);
 
         fetch(`${API_URL}/api/getMessages`, {
             method: "POST",
@@ -225,13 +183,42 @@ const Chat = () => {
             body: JSON.stringify({ roomId: room }),
         })
             .then((r) => r.json())
-            .then(setMessages);
+            .then((data) => {
+                const normalized = data.map((m) => ({
+                    _id: m._id,
+                    senderId: m.senderId,
+                    text: m.text,
+                }));
+                setMessages(normalized);
+            });
     }, [activeChat, userId]);
 
-    /* ================= SEND MESSAGE ================= */
+    /* ===== SOCKET RECEIVE ===== */
+
+    useEffect(() => {
+        const onReceive = (msg) => {
+            setMessages((prev) =>
+                msg.roomId === roomId ? [...prev, msg] : prev
+            );
+        };
+
+        socket.on("receive_message", onReceive);
+        return () => socket.off("receive_message", onReceive);
+    }, [roomId]);
+
+    /* ===== SEND MESSAGE ===== */
 
     const sendChat = () => {
         if (!messageInput.trim() || !roomId) return;
+
+        const msg = {
+            _id: Date.now(),
+            roomId,
+            senderId: userId,
+            text: messageInput,
+        };
+
+        setMessages((prev) => [...prev, msg]);
 
         socket.emit("send_message", {
             roomId,
