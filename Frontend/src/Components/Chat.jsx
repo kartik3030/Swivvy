@@ -133,9 +133,7 @@ const Chat = () => {
 
     /* FETCH LOGGED-IN USER */
     useEffect(() => {
-        fetch(`${API_URL}/api/getUserData`, {
-            credentials: "include",
-        })
+        fetch(`${API_URL}/api/getUserData`, { credentials: "include" })
             .then((res) => {
                 if (!res.ok) throw new Error("Unauthorized");
                 return res.json();
@@ -144,12 +142,17 @@ const Chat = () => {
             .catch(() => setUser(null));
     }, []);
 
-    /* SOCKET LISTENER (SINGLE, CLEAN) */
+    /* SOCKET LISTENER (ROOM-SAFE) */
     useEffect(() => {
-        if (!userId) return;
+        if (!userId || !roomId) return;
 
         const onReceive = (msg) => {
-            setMessages((prev) => [...prev, msg]);
+            if (msg.roomId !== roomId) return;
+
+            setMessages((prev) => {
+                if (prev.some((m) => m._id === msg._id)) return prev;
+                return [...prev, msg];
+            });
         };
 
         socket.on("receive_message", onReceive);
@@ -157,7 +160,7 @@ const Chat = () => {
         return () => {
             socket.off("receive_message", onReceive);
         };
-    }, [userId]);
+    }, [userId, roomId]);
 
     /* FETCH MATCHES */
     useEffect(() => {
@@ -171,7 +174,7 @@ const Chat = () => {
             .then(setMatches);
     }, [userId]);
 
-    /* JOIN ROOM + LOAD HISTORY */
+    /* JOIN ROOM + LOAD HISTORY (NO OVERWRITE) */
     useEffect(() => {
         if (!activeChat || !userId) return;
 
@@ -181,15 +184,9 @@ const Chat = () => {
                 : `${activeChat._id}_${userId}`;
 
         setRoomId(room);
-        setMessages([]);
 
         const join = () => socket.emit("join_room", room);
-
-        if (socket.connected) {
-            join();
-        } else {
-            socket.once("connect", join);
-        }
+        socket.connected ? join() : socket.once("connect", join);
 
         fetch(`${API_URL}/api/getMessages`, {
             method: "POST",
@@ -198,20 +195,28 @@ const Chat = () => {
             body: JSON.stringify({ roomId: room }),
         })
             .then((r) => r.json())
-            .then(setMessages);
+            .then((history) => {
+                setMessages((prev) => {
+                    const ids = new Set(prev.map((m) => m._id));
+                    return [...history.filter((m) => !ids.has(m._id)), ...prev];
+                });
+            });
     }, [activeChat, userId]);
 
-    /* SEND MESSAGE (NO DUPLICATION) */
+    /* SEND MESSAGE (OPTIMISTIC) */
     const sendChat = () => {
         if (!messageInput.trim() || !roomId) return;
 
-        socket.emit("send_message", {
+        const msg = {
+            _id: crypto.randomUUID(),
             roomId,
             senderId: userId,
             receiverId: activeChat._id,
             text: messageInput,
-        });
+        };
 
+        setMessages((prev) => [...prev, msg]);
+        socket.emit("send_message", msg);
         setMessageInput("");
     };
 
