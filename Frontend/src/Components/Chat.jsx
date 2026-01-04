@@ -157,20 +157,6 @@ const Chat = () => {
             .then(setMatches);
     }, [userId]);
 
-    /* ===== SOCKET AUTH REFRESH ===== */
-
-    useEffect(() => {
-        if (!userId) return;
-
-        socket.auth = {
-            token: document.cookie
-                .split("; ")
-                .find((c) => c.startsWith("token="))
-                ?.split("=")[1],
-        };
-
-        if (!socket.connected) socket.connect();
-    }, [userId]);
 
     /* ===== JOIN ROOM ===== */
 

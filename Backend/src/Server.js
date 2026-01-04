@@ -124,13 +124,23 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-    res.clearCookie("token", cookieOptions);
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+    });
+
     res.json({ success: true });
 });
 
 app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
     await User.findByIdAndDelete(req.user.id);
-    res.clearCookie("token", cookieOptions);
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+    });
+
     res.json({ success: true });
 });
 
@@ -246,17 +256,21 @@ const io = new Server(server, {
 });
 
 io.use((socket, next) => {
-    try {
-        const cookies = cookie.parse(socket.handshake.headers.cookie || "");
-        const token = cookies.token || socket.handshake.auth?.token;
-        if (!token) throw new Error();
+    const raw = socket.request.headers.cookie;
+    if (!raw) return next(new Error("No cookie"));
 
-        socket.user = jwt.verify(token, process.env.JWT_SECRET);
+    const parsed = cookie.parse(raw);
+    const token = parsed.token;
+
+    if (!token) return next(new Error("No token"));
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return next(new Error("Invalid token"));
+        socket.user = user;
         next();
-    } catch {
-        next(new Error("Unauthorized"));
-    }
+    });
 });
+
 
 io.on("connection", (socket) => {
     const userId = String(socket.user.id);
@@ -275,14 +289,13 @@ io.on("connection", (socket) => {
     socket.on("send_message", async (msg) => {
         const saved = await Message.create({
             roomId: msg.roomId,
-            senderId: msg.senderId,
+            senderId: socket.user.id,
             receiverId: msg.receiverId,
             text: msg.text,
         });
 
         io.to(msg.roomId).emit("receive_message", saved);
     });
-
 
     socket.on("disconnect", () => {
         onlineUsers.delete(userId);
