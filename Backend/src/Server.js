@@ -49,10 +49,11 @@ app.use(
 
 const cookieOptions = {
     httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
+    secure: true,
+    sameSite: "none",
     maxAge: 7 * 24 * 60 * 60 * 1000,
 };
+
 
 const requireAuth = (req, res, next) => {
     const token = req.cookies?.token;
