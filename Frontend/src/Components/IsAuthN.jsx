@@ -27,7 +27,7 @@ const IsAuthN = () => {
 
     return isAuth
         ? <Navigate to="/explore" replace />
-        : <Navigate to="/login" replace />;
+        : <Navigate to="/" replace />;
 };
 
 export default IsAuthN;

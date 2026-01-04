@@ -8,14 +8,15 @@ import ProfilePage from "./Pages/ProfilePage.jsx";
 import EditProfile from "./Pages/EditProfile.jsx";
 import ChatPage from "./Pages/ChatPage.jsx";
 
+import IsAuthN from "./Components/IsAuthN.jsx";
 import ProtectedRoute from "./Components/ProtectedRoute.jsx";
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Landing */}
-        <Route path="/" element={<Landing />} />
+        {/* Entry decision */}
+        <Route path="/" element={<IsAuthN />} />
 
         {/* Public */}
         <Route path="/signup" element={<Signup />} />
