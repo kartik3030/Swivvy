@@ -5,14 +5,16 @@ import api, { BASE_URL } from "../api";
 
 /* ================= IMAGE RESOLVER ================= */
 
+const FALLBACK_IMG =
+    "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+
 const resolveImage = (path) => {
-    if (!path)
-        return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+    if (typeof path !== "string") return FALLBACK_IMG;
 
     if (path.startsWith("http")) return path;
     if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
 
-    return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
+    return FALLBACK_IMG;
 };
 
 /* ================= CHAT LIST ================= */
@@ -30,23 +32,28 @@ const ChatList = ({ matches, onSelect }) => {
             </div>
 
             <div className="p-3 space-y-3">
-                {matches.map((m) => (
-                    <div
-                        key={m._id}
-                        onClick={() => onSelect(m)}
-                        className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
-                    >
-                        <img
-                            src={resolveImage(m.profilePhoto)}
-                            className="w-12 h-12 rounded-full object-cover"
-                            alt=""
-                        />
-                        <div>
-                            <p className="font-semibold">{m.FName}</p>
-                            <p className="text-sm text-white/60">Tap to chat</p>
-                        </div>
-                    </div>
-                ))}
+                {Array.isArray(matches) &&
+                    matches.map((m) => {
+                        if (!m || typeof m !== "object") return null;
+
+                        return (
+                            <div
+                                key={m._id || Math.random()}
+                                onClick={() => onSelect(m)}
+                                className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
+                            >
+                                <img
+                                    src={resolveImage(m.profilePhoto)}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                    alt=""
+                                />
+                                <div>
+                                    <p className="font-semibold">{m.FName || "User"}</p>
+                                    <p className="text-sm text-white/60">Tap to chat</p>
+                                </div>
+                            </div>
+                        );
+                    })}
             </div>
         </div>
     );
@@ -69,6 +76,8 @@ const ChatWindow = ({
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    if (!activeChat || typeof activeChat !== "object") return null;
+
     return (
         <div className="min-h-145 min-w-90 bg-black text-white flex flex-col">
             <div className="flex items-center gap-3 p-4 border-b border-white/20">
@@ -80,21 +89,26 @@ const ChatWindow = ({
                     className="w-10 h-10 rounded-full object-cover"
                     alt=""
                 />
-                <p className="font-bold">{activeChat.FName}</p>
+                <p className="font-bold">{activeChat.FName || "User"}</p>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {messages.map((msg) => (
-                    <div
-                        key={msg._id}
-                        className={`max-w-[75%] px-4 py-2 rounded-xl break-words text-white ${msg.senderId === userId
-                            ? "ml-auto bg-orange-600"
-                            : "mr-auto bg-white/20"
-                            }`}
-                    >
-                        {msg.text}
-                    </div>
-                ))}
+                {Array.isArray(messages) &&
+                    messages.map((msg) => {
+                        if (!msg || typeof msg !== "object") return null;
+
+                        return (
+                            <div
+                                key={msg._id || Math.random()}
+                                className={`max-w-[75%] px-4 py-2 rounded-xl break-words text-white ${msg.senderId === userId
+                                    ? "ml-auto bg-orange-600"
+                                    : "mr-auto bg-white/20"
+                                    }`}
+                            >
+                                {msg.text || ""}
+                            </div>
+                        );
+                    })}
                 <div ref={bottomRef} />
             </div>
 
@@ -131,8 +145,15 @@ const Chat = () => {
     /* ===== AUTH ===== */
 
     useEffect(() => {
-        api.get("/api/getUserData")
-            .then((res) => setUser(res.data))
+        api
+            .get("/api/getUserData")
+            .then((res) => {
+                if (res?.data && typeof res.data === "object") {
+                    setUser(res.data);
+                } else {
+                    setUser(null);
+                }
+            })
             .catch(() => {
                 setUser(null);
                 navigate("/", { replace: true });
@@ -145,8 +166,13 @@ const Chat = () => {
     useEffect(() => {
         if (!userId) return;
 
-        api.post("/api/getUserMatches")
-            .then((res) => setMatches(res.data));
+        api.post("/api/getUserMatches").then((res) => {
+            if (Array.isArray(res?.data)) {
+                setMatches(res.data);
+            } else {
+                setMatches([]);
+            }
+        });
     }, [userId]);
 
     /* ===== JOIN ROOM ===== */
@@ -171,8 +197,13 @@ const Chat = () => {
         setRoomId(room);
         setMessages([]);
 
-        api.post("/api/getMessages", { roomId: room })
-            .then((res) => setMessages(res.data));
+        api.post("/api/getMessages", { roomId: room }).then((res) => {
+            if (Array.isArray(res?.data)) {
+                setMessages(res.data);
+            } else {
+                setMessages([]);
+            }
+        });
     }, [activeChat, userId]);
 
     /* ===== SOCKET RECEIVE ===== */
@@ -181,9 +212,10 @@ const Chat = () => {
         if (!roomId) return;
 
         const onReceive = (msg) => {
-            if (msg.roomId !== roomId) return;
+            if (!msg || msg.roomId !== roomId) return;
 
             setMessages((prev) => {
+                if (!Array.isArray(prev)) return [msg];
                 if (prev.some((m) => m._id === msg._id)) return prev;
                 return [...prev, msg];
             });
@@ -196,7 +228,7 @@ const Chat = () => {
     /* ===== SEND MESSAGE ===== */
 
     const sendChat = () => {
-        if (!messageInput.trim() || !roomId) return;
+        if (!messageInput.trim() || !roomId || !activeChat) return;
 
         socket.emit("send_message", {
             roomId,
@@ -206,7 +238,7 @@ const Chat = () => {
         });
 
         setMessages((prev) => [
-            ...prev,
+            ...(Array.isArray(prev) ? prev : []),
             {
                 _id: `local-${Date.now()}`,
                 roomId,

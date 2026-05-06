@@ -4,7 +4,7 @@ import Aside from "../Components/Aside";
 import Navbar2 from "../Components/Navbar2";
 import SwipeCard from "../Components/SwipeCard";
 import Chat from "../Components/Chat";
-import API_URL from "../api";
+import { BASE_URL as API_URL } from "../api";
 
 const ExplorePage = () => {
     const [user, setUser] = useState(null);

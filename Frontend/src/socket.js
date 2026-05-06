@@ -1,10 +1,9 @@
 import { io } from "socket.io-client";
-import API_URL from "./api";
+import { BASE_URL } from "./api";
 
-const socket = io(API_URL, {
+const socket = io(BASE_URL, {
     withCredentials: true,
-    transports: ["websocket", "polling"],
-    autoConnect: true,
+    transports: ["websocket"],
 });
 
 export default socket;
