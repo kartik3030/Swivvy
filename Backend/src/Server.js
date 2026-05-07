@@ -1,10 +1,8 @@
+// using public DNS to avoid mongoDb srv issue
 const dns = require("dns");
-// Use public DNS resolvers to avoid local DNS issues
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
-require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
@@ -16,22 +14,25 @@ const http = require("http");
 const { Server } = require("socket.io");
 const cookie = require("cookie");
 
+const connectMongoDb = require("./connection")
+const requireAuth = require("./middlewares/authenticated")
+const userRoute = require("./routes/user")
+
+require("dotenv").config();
+
+// connecting database
+connectMongoDb(process.env.MONGO_URI).then(() => { console.log("MongoDB connected!") })
+
 // Map to track online users (userId -> socketId)
 const onlineUsers = new Map();
 
-// Validate required environment variables
-if (!process.env.MONGO_URI) throw new Error("MONGO_URI missing");
-if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET missing");
-if (!process.env.CLIENT_URL) throw new Error("CLIENT_URL missing");
-
 // Database models
-const User = require("./Models/User");
-const Message = require("./Models/Message");
+const User = require("./models/user");
+const Message = require("./models/messages");
 
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
-const CLIENT_URL = process.env.CLIENT_URL;
 
 // Required when running behind a proxy (Render/Nginx)
 app.set("trust proxy", 1);
@@ -46,7 +47,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Configure CORS for frontend
 app.use(
     cors({
-        origin: CLIENT_URL,
+        origin: process.env.CLIENT_URL,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -57,36 +58,11 @@ app.use(
 app.options(
     /.*/,
     cors({
-        origin: CLIENT_URL,
+        origin: process.env.CLIENT_URL,
         credentials: true,
     })
 );
 
-// Cookie configuration for JWT
-const cookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // false in development
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-};
-
-// Middleware to verify JWT from cookies
-const requireAuth = (req, res, next) => {
-    const token = req.cookies?.token;
-
-    if (!token) {
-        return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch {
-        return res.status(401).json({ error: "Invalid token" });
-    }
-};
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "uploads");
@@ -114,56 +90,10 @@ const upload = multer({
 // Serve uploaded files
 app.use("/uploads", express.static(uploadsDir));
 
-// Register new user
-app.post("/api/signup", async (req, res) => {
-    const { email, password, FName, LName } = req.body;
+// handeling User routes
+app.post("/api", userRoute)
 
-    if (!email || !password || password.length < 6) {
-        return res.status(400).json({ message: "Invalid input" });
-    }
 
-    if (await User.findOne({ email })) {
-        return res.status(400).json({ message: "User exists" });
-    }
-
-    const hashed = await bcrypt.hash(password, 10);
-    await User.create({ email, password: hashed, FName, LName });
-
-    res.status(201).json({ success: true });
-});
-
-// Login user and set JWT cookie
-app.post("/api/login", async (req, res) => {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-        return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    const token = jwt.sign(
-        { id: user._id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
-    );
-
-    res.cookie("token", token, cookieOptions);
-    res.json({ success: true });
-});
-
-// Logout user by clearing cookie
-app.post("/api/logout", (req, res) => {
-    res.clearCookie("token", cookieOptions);
-    res.json({ success: true });
-});
-
-// Delete account
-app.delete("/api/deleteAccount", requireAuth, async (req, res) => {
-    await User.findByIdAndDelete(req.user.id);
-    res.clearCookie("token", cookieOptions);
-    res.json({ success: true });
-});
 
 // Handle right swipe (like)
 app.post("/api/rightSwipe", requireAuth, async (req, res) => {
@@ -241,26 +171,11 @@ app.post(
     }
 );
 
-// Get feed (exclude self and swiped users)
-app.get("/api/getDatabaseData", requireAuth, async (req, res) => {
-    const me = await User.findById(req.user.id);
-
-    const users = await User.find({
-        _id: { $nin: [req.user.id, ...me.swipedUsers] },
-    }).select("-password");
-
-    res.json(users);
-});
+// get all user from database
+app.get("/api", userRoute);
 
 // Get matches
-app.post("/api/getUserMatches", requireAuth, async (req, res) => {
-    const user = await User.findById(req.user.id).populate(
-        "matches",
-        "FName LName profilePhoto"
-    );
-
-    res.json(user.matches);
-});
+app.post("/api", userRoute);
 
 // Fetch messages for a room
 app.post("/api/getMessages", requireAuth, async (req, res) => {
@@ -281,7 +196,7 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
     cors: {
-        origin: CLIENT_URL,
+        origin: process.env.CLIENT_URL,
         credentials: true,
     },
     transports: ["websocket"],
@@ -344,32 +259,8 @@ io.on("connection", (socket) => {
     });
 });
 
-// Serve frontend build
-const distPath = path.join(__dirname, "../../Frontend/dist");
 
-if (fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
 
-    // Fallback to index.html for SPA routing
-    app.get(/.*/, (req, res) => {
-        if (req.originalUrl.startsWith("/api")) {
-            return res.status(404).json({ error: "API route not found" });
-        }
-
-        res.sendFile(path.join(distPath, "index.html"));
-    });
-}
-
-// Start server after DB connection
-(async () => {
-    try {
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log("MongoDB connected");
-
-        server.listen(PORT, () => {
-            console.log(`Server running on http://localhost:${PORT}`);
-        });
-    } catch (err) {
-        console.error("Startup failed:", err);
-    }
-})();
+server.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+})
