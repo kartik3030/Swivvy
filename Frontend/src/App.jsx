@@ -1,15 +1,15 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Landing from "./views/Landing.js";
+import Landing from "./views/Landing.jsx";
 import Signup from "./views/Signup.jsx";
-import Login from "./views/Login.js";
+import Login from "./views/Login.jsx";
 import ExplorePage from "./views/Explore.jsx";
 import ProfilePage from "./views/Profile.jsx";
-import EditProfile from "./views/EditProfile.js";
+import EditProfile from "./views/EditProfile.jsx";
 import ChatPage from "./views/Chat.jsx";
 
-import IsAuthN from "./component/IsAuthN.js";
-import ProtectedRoute from "./component/ProtectedRoute.js";
+import IsAuthN from "./component/IsAuthN.jsx";
+import ProtectedRoute from "./component/ProtectedRoute.jsx";
 
 const App = () => {
   return (
