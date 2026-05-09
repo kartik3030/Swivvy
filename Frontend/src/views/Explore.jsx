@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Aside from "../Components/Aside";
-import Navbar2 from "../Components/Navbar2";
-import SwipeCard from "../Components/SwipeCard";
-import Chat from "../Components/Chat";
+import Aside from "../component/Aside";
+import Navbar2 from "../component/Navbar2";
+import SwipeCard from "../component/SwipeCard";
+import Chat from "../component/Chat";
 import { BASE_URL as API_URL } from "../api";
 
 const ExplorePage = () => {

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "../Components/Navbar";
+import Navbar from "../component/Navbar";
 import api from "../api";
 
 const Login = () => {
