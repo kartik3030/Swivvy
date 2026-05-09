@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import Navbar from "../Components/Navbar.jsx"
-import Footer from "../Components/Footer.jsx"
+import Navbar from "../component/Navbar.jsx"
+import Footer from "../component/Footer.jsx"
 import { Link } from "react-router-dom"
 
 const Landing = () => {
