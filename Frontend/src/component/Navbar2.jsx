@@ -185,12 +185,15 @@ const Navbar = () => {
 function AvatarImg({ user }) {
     const [errored, setErrored] = useState(false)
 
-    const imgSrc =
-        user?.profilePhoto
+    const imgSrc = user?.profilePhoto
+        ? user.profilePhoto.startsWith("http")
+            ? user.profilePhoto
+            : `${import.meta.env.VITE_API_URL}${user.profilePhoto}`
+        : null
 
     const fallbackLetter = user?.FName?.charAt(0)?.toUpperCase() || "U"
 
-    if (errored) {
+    if (!imgSrc || errored) {
         return (
             <div
                 style={{
@@ -202,7 +205,6 @@ function AvatarImg({ user }) {
                     alignItems: "center",
                     justifyContent: "center",
                     color: "#fff",
-                    fontFamily: "'DM Sans', sans-serif",
                     fontWeight: 800,
                     fontSize: "1rem",
                     border: "2px solid rgba(255,255,255,0.15)",
