@@ -12,17 +12,18 @@ const cookieOptions = {
 // signup controller
 const handleSignup = async (req, res, next) => {
     try {
-        const { email, password, FName, LName } = req.body;
+        const {
+            email,
+            password,
+            FName,
+            LName,
+            country,
+            date
+        } = req.body;
 
-        if (!email || !password || !FName || !LName) {
+        if (!email || !password || !FName || !LName || !country || !date) {
             return res.status(400).json({
                 error: "All fields are required",
-            });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({
-                error: "Password must be at least 6 characters",
             });
         }
 
@@ -45,6 +46,8 @@ const handleSignup = async (req, res, next) => {
             password: hashedPassword,
             FName: FName.trim(),
             LName: LName.trim(),
+            country,
+            date,
         });
 
         res.status(201).json({
@@ -153,8 +156,8 @@ const editProfile = async (req, res, next) => {
             "LName",
             "bio",
             "age",
-            "gender",
-            "interests",
+            "country",
+            "skills",
         ];
 
         const updates = {};
@@ -174,6 +177,7 @@ const editProfile = async (req, res, next) => {
             updates,
             {
                 new: true,
+                runValidators: true,
             }
         ).select("-password");
 
