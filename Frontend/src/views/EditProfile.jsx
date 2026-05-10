@@ -238,7 +238,7 @@ const EditProfile = () => {
                             </span>
                             <span className="flex items-center gap-1 text-xs text-gray-400">
                                 <span className="material-symbols-outlined text-[14px]">location_on</span>
-                                {backendData.country || "India"}
+                                {form.country || "India"}
                             </span>
                         </div>
                         <p className="text-sm text-gray-300 leading-relaxed mb-3">{form.bio}</p>
