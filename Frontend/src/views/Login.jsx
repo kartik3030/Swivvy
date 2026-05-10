@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../component/Navbar";
-import api from "../api";
+
 
 const Login = () => {
     const navigate = useNavigate();
@@ -19,24 +19,54 @@ const Login = () => {
 
     async function submit(e) {
         e.preventDefault();
+
         if (submitLock.current) return;
 
         const email = form.email.trim();
         const password = form.password.trim();
 
-        if (!email) { setError("Email is required"); return; }
-        if (!password) { setError("Password is required"); return; }
+        if (!email) {
+            setError("Email is required");
+            return;
+        }
+
+        if (!password) {
+            setError("Password is required");
+            return;
+        }
 
         submitLock.current = true;
         setLoading(true);
         setError("");
 
         try {
-            await api.post("/api/login", { email, password });
-            setForm({ email: "", password: "" });
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/login`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ email, password }),
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || "Login failed");
+            }
+
+            setForm({
+                email: "",
+                password: "",
+            });
+
             navigate("/explore");
+
         } catch (err) {
-            setError(err?.response?.data?.message || "Login failed. Try again.");
+            setError(err.message || "Login failed. Try again.");
         } finally {
             submitLock.current = false;
             setLoading(false);

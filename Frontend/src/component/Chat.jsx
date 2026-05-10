@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket";
-import api, { BASE_URL } from "../api";
+
 
 /* ================= IMAGE RESOLVER ================= */
 
@@ -12,7 +12,9 @@ const resolveImage = (path) => {
     if (typeof path !== "string") return FALLBACK_IMG;
 
     if (path.startsWith("http")) return path;
-    if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
+    if (path.startsWith("/uploads")) {
+        return `${import.meta.env.VITE_API_URL}${path}`;
+    }
 
     return FALLBACK_IMG;
 };
@@ -145,20 +147,36 @@ const Chat = () => {
     /* ===== AUTH ===== */
 
     useEffect(() => {
-        api
-            .get("/api/getUserData")
-            .then((res) => {
-                if (res?.data && typeof res.data === "object") {
-                    setUser(res.data);
+        const fetchUser = async () => {
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/me`,
+                    {
+                        credentials: "include",
+                    }
+                );
+
+                if (!res.ok) {
+                    throw new Error("Unauthorized");
+                }
+
+                const data = await res.json();
+
+                if (data && typeof data === "object") {
+                    setUser(data);
                 } else {
                     setUser(null);
                 }
-            })
-            .catch(() => {
+
+            } catch {
                 setUser(null);
                 navigate("/", { replace: true });
-            })
-            .finally(() => setLoading(false));
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUser();
     }, [navigate]);
 
     /* ===== FETCH MATCHES ===== */
@@ -166,13 +184,35 @@ const Chat = () => {
     useEffect(() => {
         if (!userId) return;
 
-        api.post("/api/getUserMatches").then((res) => {
-            if (Array.isArray(res?.data)) {
-                setMatches(res.data);
-            } else {
+        const fetchMatches = async () => {
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/matches`,
+                    {
+                        method: "GET",
+                        credentials: "include",
+                    }
+                );
+
+                if (!res.ok) {
+                    throw new Error("Failed to fetch matches");
+                }
+
+                const data = await res.json();
+
+                if (Array.isArray(data)) {
+                    setMatches(data);
+                } else {
+                    setMatches([]);
+                }
+
+            } catch (err) {
+                console.error("Fetch matches error:", err);
                 setMatches([]);
             }
-        });
+        };
+
+        fetchMatches();
     }, [userId]);
 
     /* ===== JOIN ROOM ===== */
@@ -197,13 +237,41 @@ const Chat = () => {
         setRoomId(room);
         setMessages([]);
 
-        api.post("/api/getMessages", { roomId: room }).then((res) => {
-            if (Array.isArray(res?.data)) {
-                setMessages(res.data);
-            } else {
+        const fetchMessages = async () => {
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/getMessages`,
+                    {
+                        method: "POST",
+                        credentials: "include",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            roomId: room,
+                        }),
+                    }
+                );
+
+                if (!res.ok) {
+                    throw new Error("Failed to fetch messages");
+                }
+
+                const data = await res.json();
+
+                if (Array.isArray(data)) {
+                    setMessages(data);
+                } else {
+                    setMessages([]);
+                }
+
+            } catch (err) {
+                console.error("Fetch messages error:", err);
                 setMessages([]);
             }
-        });
+        };
+
+        fetchMessages();
     }, [activeChat, userId]);
 
     /* ===== SOCKET RECEIVE ===== */
