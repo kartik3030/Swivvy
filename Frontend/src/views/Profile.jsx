@@ -96,7 +96,6 @@ const ProfilePage = () => {
             setShowConfirm(false);
         }
     };
-
     /* ================= LOADING ================= */
 
     if (loading) {
