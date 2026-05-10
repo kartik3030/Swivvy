@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar2 from "../component/Navbar2";
 import { useNavigate } from "react-router-dom";
-import api, { BASE_URL } from "../api";
+
 
 /* ================= IMAGE RESOLVER ================= */
 
@@ -11,7 +11,9 @@ const resolveImage = (path) => {
     }
 
     if (path.startsWith("http")) return path;
-    if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
+    if (path.startsWith("/uploads")) {
+        return `${import.meta.env.VITE_API_URL}${path}`;
+    }
 
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
@@ -47,9 +49,21 @@ const EditProfile = () => {
 
     /* ===== Fetch logged-in user ===== */
     useEffect(() => {
-        api.get("/api/getUserData")
-            .then((res) => {
-                const data = res.data;
+        const fetchUser = async () => {
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/me`,
+                    {
+                        credentials: "include",
+                    }
+                );
+
+                if (!res.ok) {
+                    throw new Error("Unauthorized");
+                }
+
+                const data = await res.json();
+
                 setBackendData(data);
 
                 editForm({
@@ -60,10 +74,13 @@ const EditProfile = () => {
                     bio: data.bio || "",
                     skills: normalizeSkills(data.skills),
                 });
-            })
-            .catch(() => {
+
+            } catch (err) {
                 navigate("/");
-            });
+            }
+        };
+
+        fetchUser();
     }, [navigate]);
 
     /* ===== Input change ===== */
@@ -119,19 +136,31 @@ const EditProfile = () => {
             form.skills.forEach((s) => formData.append("skills", s));
             formData.append("email", form.email);
 
-            if (form.profilePhoto)
+            if (form.profilePhoto) {
                 formData.append("profilePhoto", form.profilePhoto);
+            }
 
-            const res = await api.post("/api/editProfile", formData);
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/editProfile`,
+                {
+                    method: "PUT",
+                    credentials: "include",
+                    body: formData,
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || "Something went wrong while saving");
+            }
 
             setSuccessMsg("Profile updated successfully!");
-            setBackendData(res.data);
+            setBackendData(data);
             setPreview(null);
+
         } catch (err) {
-            setError(
-                err?.response?.data?.message ||
-                "Something went wrong while saving"
-            );
+            setError(err.message || "Something went wrong while saving");
         } finally {
             setDisable(false);
         }

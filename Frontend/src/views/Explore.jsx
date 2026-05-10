@@ -4,7 +4,7 @@ import Aside from "../component/Aside";
 import Navbar2 from "../component/Navbar2";
 import SwipeCard from "../component/SwipeCard";
 import Chat from "../component/Chat";
-import { BASE_URL as API_URL } from "../api";
+
 
 const ExplorePage = () => {
     const [user, setUser] = useState(null);
@@ -24,9 +24,12 @@ const ExplorePage = () => {
 
         const checkAuth = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/getUserData`, {
-                    credentials: "include",
-                });
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/me`,
+                    {
+                        credentials: "include",
+                    }
+                );
 
                 if (res.status === 401) {
                     if (!cancelled) {
@@ -45,6 +48,7 @@ const ExplorePage = () => {
                 }
             } catch (err) {
                 console.error("Auth error:", err);
+
                 if (!cancelled) {
                     setLoading(false);
                     navigate("/");
@@ -60,7 +64,6 @@ const ExplorePage = () => {
     }, [navigate]);
 
     /* ================= FETCH USERS ================= */
-
     useEffect(() => {
         if (!user) return;
 
@@ -68,11 +71,16 @@ const ExplorePage = () => {
 
         const fetchUsers = async () => {
             try {
-                const res = await fetch(`${API_URL}/api/getDatabaseData`, {
-                    credentials: "include",
-                });
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/feed`,
+                    {
+                        credentials: "include",
+                    }
+                );
 
-                if (!res.ok) throw new Error("Failed to fetch users");
+                if (!res.ok) {
+                    throw new Error("Failed to fetch users");
+                }
 
                 const data = await res.json();
 
@@ -120,7 +128,7 @@ const ExplorePage = () => {
         setIsSwiping(true);
 
         try {
-            const res = await fetch(`${API_URL}/api/rightSwipe`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/swipe/rightSwipe`, {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
@@ -153,7 +161,7 @@ const ExplorePage = () => {
         setIsSwiping(true);
 
         try {
-            const res = await fetch(`${API_URL}/api/leftSwipe`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/swipe/leftSwipe`, {
                 method: "POST",
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
