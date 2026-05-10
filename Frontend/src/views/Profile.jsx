@@ -69,13 +69,30 @@ const ProfilePage = () => {
 
     const handleConfirmDelete = async () => {
         if (actionLock.current) return;
+
         actionLock.current = true;
+
         try {
-            await api.delete("/api/deleteAccount");
-            navigate("/");
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/deleteAccount`,
+                {
+                    method: "DELETE",
+                    credentials: "include",
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Delete failed");
+            }
+
+            navigate("/signup");
+
         } catch (err) {
             console.error("Delete account error:", err);
         } finally {
+            actionLock.current = false;
             setShowConfirm(false);
         }
     };
