@@ -3,12 +3,38 @@ import { Link, useLocation } from "react-router-dom"
 
 const Navbar = () => {
     const [scrolled, setScrolled] = useState(false)
+    const [user, setUser] = useState(null)
     const location = useLocation()
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 20)
         window.addEventListener('scroll', onScroll, { passive: true })
         return () => window.removeEventListener('scroll', onScroll)
+    }, [])
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+                    method: "GET",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                })
+
+                if (!res.ok) {
+                    throw new Error("Failed to fetch user data")
+                }
+
+                const data = await res.json()
+                setUser(data)
+            } catch (error) {
+                console.log(error)
+            }
+        }
+
+        fetchUser()
     }, [])
 
     const isActive = (path) => location.pathname === path
@@ -30,44 +56,7 @@ const Navbar = () => {
         .nav-root {
           animation: navFadeDown 0.6s cubic-bezier(.16,1,.3,1) both;
         }
-        .nav-link-btn {
-          background: none;
-          border: none;
-          font-family: 'DM Sans', sans-serif;
-          font-weight: 600;
-          font-size: 0.88rem;
-          cursor: pointer;
-          padding: 0.4rem 1rem;
-          border-radius: 999px;
-          letter-spacing: 0.03em;
-          transition: color 0.2s, background 0.2s;
-          color: rgba(255,255,255,0.6);
-        }
-        .nav-link-btn:hover {
-          color: #fff;
-          background: rgba(255,255,255,0.06);
-        }
-        .nav-link-btn.active {
-          color: #fff;
-          background: rgba(255,255,255,0.08);
-        }
-        .nav-cta {
-          background: linear-gradient(135deg, #f97316, #c2410c);
-          border: none;
-          font-family: 'DM Sans', sans-serif;
-          font-weight: 800;
-          font-size: 0.88rem;
-          cursor: pointer;
-          padding: 0.45rem 1.3rem;
-          border-radius: 999px;
-          color: #fff;
-          letter-spacing: 0.03em;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .nav-cta:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(249,115,22,0.4);
-        }
+
         .nav-logo {
           font-family: 'Bebas Neue', sans-serif;
           font-size: 1.65rem;
@@ -77,10 +66,13 @@ const Navbar = () => {
           position: relative;
           transition: color 0.2s;
         }
+
         .nav-logo::after {
           content: '';
           position: absolute;
-          bottom: -2px; left: 0; right: 0;
+          bottom: -2px;
+          left: 0;
+          right: 0;
           height: 2px;
           background: linear-gradient(90deg, #f97316, #7f1d1d);
           border-radius: 2px;
@@ -88,25 +80,69 @@ const Navbar = () => {
           transform-origin: left;
           transition: transform 0.3s cubic-bezier(.4,0,.2,1);
         }
-        .nav-logo:hover::after { transform: scaleX(1); }
+
+        .nav-logo:hover::after {
+          transform: scaleX(1);
+        }
 
         .nav-dot {
-          width: 6px; height: 6px;
+          width: 6px;
+          height: 6px;
           border-radius: 50%;
           background: #22c55e;
           animation: blink 1.4s ease-in-out infinite;
           flex-shrink: 0;
+        }
+
+        .nav-avatar-wrap {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.2s;
+        }
+
+        .nav-avatar-wrap:hover {
+          transform: translateY(-1px);
+        }
+
+        .nav-avatar {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          object-fit: cover;
+          display: block;
+          border: 2px solid rgba(255,255,255,0.15);
+          transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .nav-avatar-wrap:hover .nav-avatar {
+          border-color: #f97316;
+          box-shadow: 0 0 0 3px rgba(249,115,22,0.2);
+        }
+
+        .nav-avatar-online {
+          position: absolute;
+          bottom: 1px;
+          right: 1px;
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: #22c55e;
+          border: 2px solid #000;
         }
       `}</style>
 
             <nav
                 className="nav-root"
                 style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 100,
                     padding: scrolled ? '0.6rem 0' : '0.85rem 0',
-                    background: scrolled
-                        ? 'rgba(0,0,0,0.85)'
-                        : 'rgba(0,0,0,0.4)',
+                    background: scrolled ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.4)',
                     backdropFilter: 'blur(14px)',
                     WebkitBackdropFilter: 'blur(14px)',
                     borderBottom: scrolled
@@ -115,34 +151,75 @@ const Navbar = () => {
                     transition: 'padding 0.3s, background 0.3s, border-color 0.3s',
                 }}
             >
-                <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    maxWidth: 1300, margin: '0 auto', padding: '0 2rem',
-                }}>
-
-                    {/* Logo */}
-                    <Link to="/" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        maxWidth: 1300,
+                        margin: '0 auto',
+                        padding: '0 2rem',
+                    }}
+                >
+                    <Link
+                        to="/"
+                        className="nav-logo"
+                        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                    >
                         <span className="nav-dot" />
                         SWIVVY
                     </Link>
 
-                    {/* Nav links */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Link to="/login" style={{ textDecoration: 'none' }}>
-                            <button className={`nav-link-btn ${isActive('/login') ? 'active' : ''}`}>
-                                Login
-                            </button>
-                        </Link>
-                        <Link to="/signup" style={{ textDecoration: 'none' }}>
-                            <button className="nav-cta">
-                                Sign Up
-                            </button>
-                        </Link>
-                    </div>
-
+                    <Link to="/profile" style={{ textDecoration: 'none' }}>
+                        <div className="nav-avatar-wrap">
+                            <AvatarImg user={user} />
+                            <span className="nav-avatar-online" />
+                        </div>
+                    </Link>
                 </div>
             </nav>
         </>
+    )
+}
+
+function AvatarImg({ user }) {
+    const [errored, setErrored] = useState(false)
+
+    const imgSrc =
+        user?.profilePhoto
+
+    const fallbackLetter = user?.FName?.charAt(0)?.toUpperCase() || "U"
+
+    if (errored) {
+        return (
+            <div
+                style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #f97316, #7f1d1d)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontWeight: 800,
+                    fontSize: "1rem",
+                    border: "2px solid rgba(255,255,255,0.15)",
+                }}
+            >
+                {fallbackLetter}
+            </div>
+        )
+    }
+
+    return (
+        <img
+            src={imgSrc}
+            alt="User profile"
+            className="nav-avatar"
+            onError={() => setErrored(true)}
+        />
     )
 }
 

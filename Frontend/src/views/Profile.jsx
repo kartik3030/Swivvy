@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Navbar2 from "../component/Navbar2";
 import { Link, useNavigate } from "react-router-dom";
-import api, { BASE_URL } from "../api";
+
 
 /* ================= IMAGE RESOLVER ================= */
 
@@ -11,7 +11,9 @@ const resolveImage = (path) => {
     }
 
     if (path.startsWith("http")) return path;
-    if (path.startsWith("/uploads")) return `${BASE_URL}${path}`;
+    if (path.startsWith("/uploads")) {
+        return `${import.meta.env.VITE_API_URL}${path}`;
+    }
 
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
@@ -27,14 +29,31 @@ const ProfilePage = () => {
     /* ================= AUTH + FETCH USER ================= */
 
     useEffect(() => {
-        api.get("/api/getUserData")
-            .then((res) => {
-                setBackendData(res.data);
+        const fetchUser = async () => {
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/me`,
+                    {
+                        credentials: "include",
+                    }
+                );
+
+                if (!res.ok) {
+                    throw new Error("Unauthorized");
+                }
+
+                const data = await res.json();
+
+                setBackendData(data);
                 setLoading(false);
-            })
-            .catch(() => {
+
+            } catch {
+                setLoading(false);
                 navigate("/login");
-            });
+            }
+        };
+
+        fetchUser();
     }, [navigate]);
 
     /* ================= LOGOUT ================= */

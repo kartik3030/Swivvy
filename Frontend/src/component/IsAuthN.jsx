@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import api from "../api";
+
 
 const IsAuthN = () => {
     const [loading, setLoading] = useState(true);
@@ -9,8 +9,19 @@ const IsAuthN = () => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                await api.get("/api/getUserData");
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/me`,
+                    {
+                        credentials: "include",
+                    }
+                );
+
+                if (!res.ok) {
+                    throw new Error("Unauthorized");
+                }
+
                 setIsAuth(true);
+
             } catch {
                 setIsAuth(false);
             } finally {

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../component/Navbar";
-import api from "../api";
+
 
 const COUNTRIES = [
     { value: "IN", label: "India" },
@@ -56,22 +56,51 @@ const Signup = () => {
 
     async function submit(e) {
         e.preventDefault();
+
         if (submitLock.current) return;
+
         const err = validateForm();
-        if (err) { setError(err); return; }
+        if (err) {
+            setError(err);
+            return;
+        }
+
         submitLock.current = true;
         setLoading(true);
-        setError(""); setSuccess("");
+        setError("");
+        setSuccess("");
+
         try {
-            await api.post("/api/signup", {
-                FName: form.FName.trim(), LName: form.LName.trim(),
-                email: form.email.trim().toLowerCase(),
-                date: form.date, country: form.country, password: form.password,
-            });
-            setSuccess("Account created! Redirecting…");
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/signup`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        FName: form.FName.trim(),
+                        LName: form.LName.trim(),
+                        email: form.email.trim().toLowerCase(),
+                        date: form.date,
+                        country: form.country,
+                        password: form.password,
+                    }),
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || "Signup failed");
+            }
+
+            setSuccess("Account created! Redirecting...");
             setTimeout(() => navigate("/login"), 1500);
+
         } catch (err) {
-            setError(err?.response?.data?.message || "Signup failed. Try again.");
+            setError(err.message || "Signup failed. Try again.");
         } finally {
             submitLock.current = false;
             setLoading(false);
