@@ -1,6 +1,23 @@
-const Message = require("../models/messages");
+import { Server, Socket } from "socket.io";
+import Message from "../models/messages";
 
-async function sendMessage(io, socket, msg) {
+interface AuthSocket extends Socket {
+    user: {
+        id: string;
+    };
+}
+
+interface MessagePayload {
+    roomId: string;
+    receiverId: string;
+    text: string;
+}
+
+const sendMessage = async (
+    io: Server,
+    socket: AuthSocket,
+    msg: MessagePayload
+): Promise<void> => {
     try {
         if (
             !msg ||
@@ -10,14 +27,15 @@ async function sendMessage(io, socket, msg) {
             typeof msg.text !== "string" ||
             !msg.text.trim()
         ) {
-            return socket.emit("message_error", {
+            socket.emit("message_error", {
                 error: "Invalid message payload",
             });
+            return;
         }
 
         const savedMessage = await Message.create({
             roomId: msg.roomId,
-            senderId: socket.user.id,
+            senderId: msg.receiverId,
             receiverId: msg.receiverId,
             text: msg.text.trim(),
         });
@@ -29,25 +47,28 @@ async function sendMessage(io, socket, msg) {
             error: "Failed to send message",
         });
     }
-}
+};
 
-function joinRoom(socket, roomId) {
+const joinRoom = (
+    socket: AuthSocket,
+    roomId: string
+): void => {
     if (!roomId || typeof roomId !== "string") {
         return;
     }
 
     socket.join(roomId);
-}
+};
 
-function leaveAllRooms(socket) {
+const leaveAllRooms = (socket: AuthSocket): void => {
     for (const room of socket.rooms) {
         if (room !== socket.id) {
             socket.leave(room);
         }
     }
-}
+};
 
-module.exports = {
+export {
     sendMessage,
     joinRoom,
     leaveAllRooms,

@@ -1,7 +1,8 @@
-const User = require("../models/user");
-const Message = require("../models/messages");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+import User from "../models/user";
+import Message from "../models/messages";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { Request, Response, NextFunction } from "express";
 
 const cookieOptions = {
     httpOnly: true,
@@ -9,22 +10,55 @@ const cookieOptions = {
     maxAge: 24 * 60 * 60 * 1000,
 };
 
+interface SignupBody {
+    email: string;
+    password: string;
+    FName: string;
+    LName: string;
+    country: string;
+    date: string;
+}
+
+interface LoginBody {
+    email: string;
+    password: string;
+}
+
+interface MessageBody {
+    roomId: string;
+}
+
+interface AuthRequest extends Request {
+    user: {
+        id: string;
+    };
+    file?: Express.Multer.File;
+}
+
+interface ProfileUpdates {
+    FName?: string;
+    LName?: string;
+    bio?: string;
+    age?: number;
+    country?: string;
+    skills?: string[];
+    profilePhoto?: string;
+}
+
 // signup controller
-const handleSignup = async (req, res, next) => {
+const handleSignup = async (
+    req: Request<{}, {}, SignupBody>,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
     try {
-        const {
-            email,
-            password,
-            FName,
-            LName,
-            country,
-            date
-        } = req.body;
+        const { email, password, FName, LName, country, date } = req.body;
 
         if (!email || !password || !FName || !LName || !country || !date) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: "All fields are required",
             });
+            return;
         }
 
         const normalizedEmail = email.toLowerCase().trim();
@@ -34,9 +68,10 @@ const handleSignup = async (req, res, next) => {
         });
 
         if (existingUser) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: "User already exists",
             });
+            return;
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -60,14 +95,19 @@ const handleSignup = async (req, res, next) => {
 };
 
 // login controller
-const handleLogin = async (req, res, next) => {
+const handleLogin = async (
+    req: Request<{}, {}, LoginBody>,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
     try {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: "Email and password required",
             });
+            return;
         }
 
         const normalizedEmail = email.toLowerCase().trim();
@@ -77,9 +117,10 @@ const handleLogin = async (req, res, next) => {
         });
 
         if (!user) {
-            return res.status(401).json({
+            res.status(401).json({
                 error: "Invalid credentials",
             });
+            return;
         }
 
         const passwordMatch = await bcrypt.compare(
@@ -88,9 +129,14 @@ const handleLogin = async (req, res, next) => {
         );
 
         if (!passwordMatch) {
-            return res.status(401).json({
+            res.status(401).json({
                 error: "Invalid credentials",
             });
+            return;
+        }
+
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET missing");
         }
 
         const token = jwt.sign(
@@ -116,7 +162,7 @@ const handleLogin = async (req, res, next) => {
 };
 
 // logout controller
-const handleLogout = (req, res) => {
+const handleLogout = (req: Request, res: Response): void => {
     res.clearCookie("token", cookieOptions);
 
     res.json({
@@ -125,14 +171,19 @@ const handleLogout = (req, res) => {
 };
 
 // feed controller
-const showUsers = async (req, res, next) => {
+const showUsers = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
     try {
         const me = await User.findById(req.user.id);
 
         if (!me) {
-            return res.status(404).json({
+            res.status(404).json({
                 error: "User not found",
             });
+            return;
         }
 
         const users = await User.find({
@@ -149,7 +200,11 @@ const showUsers = async (req, res, next) => {
 };
 
 // edit profile controller
-const editProfile = async (req, res, next) => {
+const editProfile = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
     try {
         const allowedFields = [
             "FName",
@@ -160,11 +215,11 @@ const editProfile = async (req, res, next) => {
             "skills",
         ];
 
-        const updates = {};
+        const updates: ProfileUpdates = {};
 
         for (const field of allowedFields) {
             if (req.body[field] !== undefined) {
-                updates[field] = req.body[field];
+                (updates as any)[field] = req.body[field];
             }
         }
 
@@ -182,9 +237,10 @@ const editProfile = async (req, res, next) => {
         ).select("-password");
 
         if (!updatedUser) {
-            return res.status(404).json({
+            res.status(404).json({
                 error: "User not found",
             });
+            return;
         }
 
         res.json(updatedUser);
@@ -195,7 +251,11 @@ const editProfile = async (req, res, next) => {
 };
 
 // delete account controller
-const deleteAccount = async (req, res, next) => {
+const deleteAccount = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
     try {
         await User.findByIdAndDelete(req.user.id);
 
@@ -211,7 +271,11 @@ const deleteAccount = async (req, res, next) => {
 };
 
 // matches controller
-const getMatches = async (req, res, next) => {
+const getMatches = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
     try {
         const user = await User.findById(req.user.id).populate(
             "matches",
@@ -219,9 +283,10 @@ const getMatches = async (req, res, next) => {
         );
 
         if (!user) {
-            return res.status(404).json({
+            res.status(404).json({
                 error: "User not found",
             });
+            return;
         }
 
         res.json(user.matches);
@@ -232,14 +297,19 @@ const getMatches = async (req, res, next) => {
 };
 
 // current user controller
-const getCurrentUser = async (req, res, next) => {
+const getCurrentUser = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
     try {
         const user = await User.findById(req.user.id).select("-password");
 
         if (!user) {
-            return res.status(404).json({
+            res.status(404).json({
                 error: "User not found",
             });
+            return;
         }
 
         res.json(user);
@@ -249,14 +319,20 @@ const getCurrentUser = async (req, res, next) => {
     }
 };
 
-const handleGetMessage = async (req, res, next) => {
+// messages controller
+const handleGetMessage = async (
+    req: Request<{}, {}, MessageBody>,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
     try {
         const { roomId } = req.body;
 
         if (!roomId) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: "roomId is required",
             });
+            return;
         }
 
         const messages = await Message.find({
@@ -272,7 +348,7 @@ const handleGetMessage = async (req, res, next) => {
     }
 };
 
-module.exports = {
+export {
     handleSignup,
     handleLogin,
     handleLogout,
@@ -281,5 +357,5 @@ module.exports = {
     deleteAccount,
     getMatches,
     getCurrentUser,
-    handleGetMessage
+    handleGetMessage,
 };

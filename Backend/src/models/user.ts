@@ -1,6 +1,23 @@
-const mongoose = require("mongoose");
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
-const userSchema = new mongoose.Schema(
+export interface IUser extends Document {
+    FName: string;
+    LName: string;
+    email: string;
+    password: string;
+    country: string;
+    bio: string;
+    skills: string[];
+    role: string;
+    profilePhoto: string;
+    likes: Types.ObjectId[];
+    matches: Types.ObjectId[];
+    swipedUsers: Types.ObjectId[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const userSchema = new Schema<IUser>(
     {
         FName: {
             type: String,
@@ -56,7 +73,7 @@ const userSchema = new mongoose.Schema(
 
         likes: [
             {
-                type: mongoose.Schema.Types.ObjectId,
+                type: Schema.Types.ObjectId,
                 ref: "User",
                 default: [],
             },
@@ -64,7 +81,7 @@ const userSchema = new mongoose.Schema(
 
         matches: [
             {
-                type: mongoose.Schema.Types.ObjectId,
+                type: Schema.Types.ObjectId,
                 ref: "User",
                 default: [],
             },
@@ -72,13 +89,17 @@ const userSchema = new mongoose.Schema(
 
         swipedUsers: [
             {
-                type: mongoose.Schema.Types.ObjectId,
+                type: Schema.Types.ObjectId,
                 ref: "User",
                 default: [],
             },
         ],
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+    }
 );
 
-module.exports = mongoose.model("User", userSchema);
+const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
+
+export default User;

@@ -1,19 +1,21 @@
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
-const express = require("express");
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
-const dns = require("dns");
-const http = require("http");
-const path = require("path");
+import express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import dns from "dns";
+import http from "http";
+import path from "path";
 
-const connectMongoDb = require("./connection");
-const initSocket = require("./config/socket");
+import connectMongoDb from "./connection";
+import initSocket from "./config/socket";
 
-const userRoute = require("./routes/user");
-const swipeRoute = require("./routes/swipe");
+import userRoute from "./routes/user";
+import swipeRoute from "./routes/swipe";
 
 const app = express();
+
 const PORT = process.env.PORT || 3000;
 
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
@@ -25,7 +27,7 @@ app.use(
         origin: process.env.CLIENT_URL,
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
+        allowedHeaders: ["Content-Type", "Authorization"]
     })
 );
 
@@ -38,20 +40,31 @@ app.use("/uploads", express.static(uploadsDir));
 app.use("/api", userRoute);
 app.use("/api/swipe", swipeRoute);
 
-app.use((err, req, res, next) => {
-    console.error(err);
+app.use(
+    (
+        err: Error,
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): void => {
+        console.error(err);
 
-    res.status(500).json({
-        error: "Internal server error",
-    });
-});
+        res.status(500).json({
+            error: "Internal server error"
+        });
+    }
+);
 
 const server = http.createServer(app);
 
 initSocket(server);
 
-async function startServer() {
+async function startServer(): Promise<void> {
     try {
+        if (!process.env.MONGO_URI) {
+            throw new Error("MONGO_URI missing");
+        }
+
         await connectMongoDb(process.env.MONGO_URI);
 
         console.log("MongoDB connected");
