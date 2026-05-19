@@ -438,7 +438,7 @@ const Landing = () => {
                     <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, overflow: 'hidden', maxWidth: 700, width: '100%', position: 'relative' }}>
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 60%, #000)', zIndex: 1, pointerEvents: 'none' }} />
                         <img
-                            src="https://i.pinimg.com/originals/40/7c/12/407c12a9e8aed1d6dcbffe752a03f5e8.png"
+                            src="https://wallpapers.com/images/hd/cartoon-rappers-e3pacrziynupxdyf.jpg"
                             alt="Global Community Map"
                             style={{ width: '100%', display: 'block', opacity: 0.7 }}
                         />
