@@ -1,19 +1,34 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useLocation } from "react-router-dom"
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+
+interface User {
+    FName?: string;
+    profilePhoto?: string;
+}
+
+interface AvatarImgProps {
+    user: User | null;
+}
 
 const Navbar = () => {
-    const [scrolled, setScrolled] = useState(false)
-    const [user, setUser] = useState(null)
-    const location = useLocation()
+    const [scrolled, setScrolled] = useState<boolean>(false);
+    const [user, setUser] = useState<User | null>(null);
+    const location = useLocation();
 
     useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 20)
-        window.addEventListener('scroll', onScroll, { passive: true })
-        return () => window.removeEventListener('scroll', onScroll)
-    }, [])
+        const onScroll = (): void => {
+            setScrolled(window.scrollY > 20);
+        };
+
+        window.addEventListener("scroll", onScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+        };
+    }, []);
 
     useEffect(() => {
-        const fetchUser = async () => {
+        const fetchUser = async (): Promise<void> => {
             try {
                 const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
                     method: "GET",
@@ -21,23 +36,23 @@ const Navbar = () => {
                     headers: {
                         "Content-Type": "application/json",
                     },
-                })
+                });
 
                 if (!res.ok) {
-                    throw new Error("Failed to fetch user data")
+                    throw new Error("Failed to fetch user data");
                 }
 
-                const data = await res.json()
-                setUser(data)
+                const data: User = await res.json();
+                setUser(data);
             } catch (error) {
-                console.log(error)
+                console.log(error);
             }
-        }
+        };
 
-        fetchUser()
-    }, [])
+        fetchUser();
+    }, []);
 
-    const isActive = (path) => location.pathname === path
+    const isActive = (path: string): boolean => location.pathname === path;
 
     return (
         <>
@@ -46,11 +61,12 @@ const Navbar = () => {
 
         @keyframes navFadeDown {
           from { opacity: 0; transform: translateY(-16px); }
-          to   { opacity: 1; transform: translateY(0); }
+          to { opacity: 1; transform: translateY(0); }
         }
+
         @keyframes blink {
           0%,100% { opacity: 1; }
-          50%      { opacity: 0; }
+          50% { opacity: 0; }
         }
 
         .nav-root {
@@ -136,41 +152,47 @@ const Navbar = () => {
             <nav
                 className="nav-root"
                 style={{
-                    position: 'fixed',
+                    position: "fixed",
                     top: 0,
                     left: 0,
                     right: 0,
                     zIndex: 100,
-                    padding: scrolled ? '0.6rem 0' : '0.85rem 0',
-                    background: scrolled ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.4)',
-                    backdropFilter: 'blur(14px)',
-                    WebkitBackdropFilter: 'blur(14px)',
+                    padding: scrolled ? "0.6rem 0" : "0.85rem 0",
+                    background: scrolled
+                        ? "rgba(0,0,0,0.85)"
+                        : "rgba(0,0,0,0.4)",
+                    backdropFilter: "blur(14px)",
+                    WebkitBackdropFilter: "blur(14px)",
                     borderBottom: scrolled
-                        ? '1px solid rgba(255,255,255,0.06)'
-                        : '1px solid transparent',
-                    transition: 'padding 0.3s, background 0.3s, border-color 0.3s',
+                        ? "1px solid rgba(255,255,255,0.06)"
+                        : "1px solid transparent",
+                    transition: "padding 0.3s, background 0.3s, border-color 0.3s",
                 }}
             >
                 <div
                     style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
                         maxWidth: 1300,
-                        margin: '0 auto',
-                        padding: '0 2rem',
+                        margin: "0 auto",
+                        padding: "0 2rem",
                     }}
                 >
                     <Link
                         to="/"
                         className="nav-logo"
-                        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                        }}
                     >
                         <span className="nav-dot" />
                         SWIVVY
                     </Link>
 
-                    <Link to="/profile" style={{ textDecoration: 'none' }}>
+                    <Link to="/profile" style={{ textDecoration: "none" }}>
                         <div className="nav-avatar-wrap">
                             <AvatarImg user={user} />
                             <span className="nav-avatar-online" />
@@ -179,19 +201,19 @@ const Navbar = () => {
                 </div>
             </nav>
         </>
-    )
-}
+    );
+};
 
-function AvatarImg({ user }) {
-    const [errored, setErrored] = useState(false)
+function AvatarImg({ user }: AvatarImgProps) {
+    const [errored, setErrored] = useState<boolean>(false);
 
     const imgSrc = user?.profilePhoto
         ? user.profilePhoto.startsWith("http")
             ? user.profilePhoto
             : `${import.meta.env.VITE_API_URL}${user.profilePhoto}`
-        : null
+        : null;
 
-    const fallbackLetter = user?.FName?.charAt(0)?.toUpperCase() || "U"
+    const fallbackLetter = user?.FName?.charAt(0)?.toUpperCase() || "U";
 
     if (!imgSrc || errored) {
         return (
@@ -212,7 +234,7 @@ function AvatarImg({ user }) {
             >
                 {fallbackLetter}
             </div>
-        )
+        );
     }
 
     return (
@@ -222,7 +244,7 @@ function AvatarImg({ user }) {
             className="nav-avatar"
             onError={() => setErrored(true)}
         />
-    )
+    );
 }
 
-export default Navbar
+export default Navbar;

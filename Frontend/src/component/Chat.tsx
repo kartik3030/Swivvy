@@ -2,16 +2,53 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket";
 
+/* ================= TYPES ================= */
+
+interface User {
+    _id: string;
+    FName: string;
+    profilePhoto?: string;
+}
+
+interface MatchUser {
+    _id: string;
+    FName: string;
+    profilePhoto?: string;
+}
+
+interface Message {
+    _id: string;
+    roomId?: string;
+    senderId: string;
+    receiverId?: string;
+    text: string;
+}
+
+interface ChatListProps {
+    matches: MatchUser[];
+    onSelect: (user: MatchUser) => void;
+}
+
+interface ChatWindowProps {
+    activeChat: MatchUser;
+    messages: Message[];
+    messageInput: string;
+    setMessageInput: React.Dispatch<React.SetStateAction<string>>;
+    onSend: () => void;
+    onBack: () => void;
+    userId: string | null;
+}
 
 /* ================= IMAGE RESOLVER ================= */
 
 const FALLBACK_IMG =
     "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 
-const resolveImage = (path) => {
-    if (typeof path !== "string") return FALLBACK_IMG;
+const resolveImage = (path?: string): string => {
+    if (!path) return FALLBACK_IMG;
 
     if (path.startsWith("http")) return path;
+
     if (path.startsWith("/uploads")) {
         return `${import.meta.env.VITE_API_URL}${path}`;
     }
@@ -21,41 +58,41 @@ const resolveImage = (path) => {
 
 /* ================= CHAT LIST ================= */
 
-const ChatList = ({ matches, onSelect }) => {
+const ChatList = ({ matches, onSelect }: ChatListProps) => {
     const navigate = useNavigate();
 
     return (
         <div className="min-h-145 min-w-90 bg-black text-white overflow-y-auto">
             <div className="flex items-center gap-3 p-4 border-b border-white/20">
-                <button className="sm:hidden" onClick={() => navigate("/explore")}>
+                <button
+                    className="sm:hidden"
+                    onClick={() => navigate("/explore")}
+                >
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
+
                 <h1 className="text-lg font-bold text-orange-500">Messages</h1>
             </div>
 
             <div className="p-3 space-y-3">
-                {Array.isArray(matches) &&
-                    matches.map((m) => {
-                        if (!m || typeof m !== "object") return null;
+                {matches.map((m) => (
+                    <div
+                        key={m._id}
+                        onClick={() => onSelect(m)}
+                        className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
+                    >
+                        <img
+                            src={resolveImage(m.profilePhoto)}
+                            className="w-12 h-12 rounded-full object-cover"
+                            alt=""
+                        />
 
-                        return (
-                            <div
-                                key={m._id || Math.random()}
-                                onClick={() => onSelect(m)}
-                                className="flex gap-4 p-3 bg-white/10 hover:bg-white/20 rounded-lg cursor-pointer"
-                            >
-                                <img
-                                    src={resolveImage(m.profilePhoto)}
-                                    className="w-12 h-12 rounded-full object-cover"
-                                    alt=""
-                                />
-                                <div>
-                                    <p className="font-semibold">{m.FName || "User"}</p>
-                                    <p className="text-sm text-white/60">Tap to chat</p>
-                                </div>
-                            </div>
-                        );
-                    })}
+                        <div>
+                            <p className="font-semibold">{m.FName || "User"}</p>
+                            <p className="text-sm text-white/60">Tap to chat</p>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -71,14 +108,14 @@ const ChatWindow = ({
     onSend,
     onBack,
     userId,
-}) => {
-    const bottomRef = useRef(null);
+}: ChatWindowProps) => {
+    const bottomRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        bottomRef.current?.scrollIntoView({
+            behavior: "smooth",
+        });
     }, [messages]);
-
-    if (!activeChat || typeof activeChat !== "object") return null;
 
     return (
         <div className="min-h-145 min-w-90 bg-black text-white flex flex-col">
@@ -86,43 +123,51 @@ const ChatWindow = ({
                 <button onClick={onBack}>
                     <span className="material-symbols-outlined">chevron_left</span>
                 </button>
+
                 <img
                     src={resolveImage(activeChat.profilePhoto)}
                     className="w-10 h-10 rounded-full object-cover"
                     alt=""
                 />
-                <p className="font-bold">{activeChat.FName || "User"}</p>
+
+                <p className="font-bold">{activeChat.FName}</p>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {Array.isArray(messages) &&
-                    messages.map((msg) => {
-                        if (!msg || typeof msg !== "object") return null;
+                {messages.map((msg) => (
+                    <div
+                        key={msg._id}
+                        className={`max-w-[75%] px-4 py-2 rounded-xl break-words text-white ${msg.senderId === userId
+                            ? "ml-auto bg-orange-600"
+                            : "mr-auto bg-white/20"
+                            }`}
+                    >
+                        {msg.text}
+                    </div>
+                ))}
 
-                        return (
-                            <div
-                                key={msg._id || Math.random()}
-                                className={`max-w-[75%] px-4 py-2 rounded-xl break-words text-white ${msg.senderId === userId
-                                    ? "ml-auto bg-orange-600"
-                                    : "mr-auto bg-white/20"
-                                    }`}
-                            >
-                                {msg.text || ""}
-                            </div>
-                        );
-                    })}
                 <div ref={bottomRef} />
             </div>
 
             <div className="p-3 border-t border-white/20 flex gap-2">
                 <input
                     value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && onSend()}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setMessageInput(e.target.value)
+                    }
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                        if (e.key === "Enter") {
+                            onSend();
+                        }
+                    }}
                     className="flex-1 bg-white/10 px-4 py-2 rounded-full outline-none text-white"
                     placeholder="Type a message"
                 />
-                <button onClick={onSend} className="bg-orange-600 px-4 rounded-full">
+
+                <button
+                    onClick={onSend}
+                    className="bg-orange-600 px-4 rounded-full"
+                >
                     <span className="material-symbols-outlined">send</span>
                 </button>
             </div>
@@ -133,41 +178,33 @@ const ChatWindow = ({
 /* ================= MAIN CHAT ================= */
 
 const Chat = () => {
-    const [user, setUser] = useState(null);
-    const [matches, setMatches] = useState([]);
-    const [activeChat, setActiveChat] = useState(null);
-    const [messages, setMessages] = useState([]);
-    const [messageInput, setMessageInput] = useState("");
-    const [roomId, setRoomId] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<User | null>(null);
+    const [matches, setMatches] = useState<MatchUser[]>([]);
+    const [activeChat, setActiveChat] = useState<MatchUser | null>(null);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [messageInput, setMessageInput] = useState<string>("");
+    const [roomId, setRoomId] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
 
     const navigate = useNavigate();
-    const userId = user?._id ? String(user._id) : null;
+
+    const userId = user?._id ?? null;
 
     /* ===== AUTH ===== */
 
     useEffect(() => {
-        const fetchUser = async () => {
+        const fetchUser = async (): Promise<void> => {
             try {
-                const res = await fetch(
-                    `${import.meta.env.VITE_API_URL}/api/me`,
-                    {
-                        credentials: "include",
-                    }
-                );
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+                    credentials: "include",
+                });
 
                 if (!res.ok) {
                     throw new Error("Unauthorized");
                 }
 
-                const data = await res.json();
-
-                if (data && typeof data === "object") {
-                    setUser(data);
-                } else {
-                    setUser(null);
-                }
-
+                const data: User = await res.json();
+                setUser(data);
             } catch {
                 setUser(null);
                 navigate("/", { replace: true });
@@ -184,30 +221,20 @@ const Chat = () => {
     useEffect(() => {
         if (!userId) return;
 
-        const fetchMatches = async () => {
+        const fetchMatches = async (): Promise<void> => {
             try {
-                const res = await fetch(
-                    `${import.meta.env.VITE_API_URL}/api/matches`,
-                    {
-                        method: "GET",
-                        credentials: "include",
-                    }
-                );
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/matches`, {
+                    method: "GET",
+                    credentials: "include",
+                });
 
                 if (!res.ok) {
                     throw new Error("Failed to fetch matches");
                 }
 
-                const data = await res.json();
-
-                if (Array.isArray(data)) {
-                    setMatches(data);
-                } else {
-                    setMatches([]);
-                }
-
-            } catch (err) {
-                console.error("Fetch matches error:", err);
+                const data: MatchUser[] = await res.json();
+                setMatches(Array.isArray(data) ? data : []);
+            } catch {
                 setMatches([]);
             }
         };
@@ -220,8 +247,8 @@ const Chat = () => {
     useEffect(() => {
         if (!activeChat || !userId) return;
 
-        const a = String(userId);
-        const b = String(activeChat._id);
+        const a = userId;
+        const b = activeChat._id;
         const room = a < b ? `${a}_${b}` : `${b}_${a}`;
 
         socket.emit("leave_all");
@@ -237,7 +264,7 @@ const Chat = () => {
         setRoomId(room);
         setMessages([]);
 
-        const fetchMessages = async () => {
+        const fetchMessages = async (): Promise<void> => {
             try {
                 const res = await fetch(
                     `${import.meta.env.VITE_API_URL}/api/getMessages`,
@@ -257,16 +284,9 @@ const Chat = () => {
                     throw new Error("Failed to fetch messages");
                 }
 
-                const data = await res.json();
-
-                if (Array.isArray(data)) {
-                    setMessages(data);
-                } else {
-                    setMessages([]);
-                }
-
-            } catch (err) {
-                console.error("Fetch messages error:", err);
+                const data: Message[] = await res.json();
+                setMessages(Array.isArray(data) ? data : []);
+            } catch {
                 setMessages([]);
             }
         };
@@ -279,24 +299,31 @@ const Chat = () => {
     useEffect(() => {
         if (!roomId) return;
 
-        const onReceive = (msg) => {
+        const onReceive = (msg: Message): void => {
             if (!msg || msg.roomId !== roomId) return;
 
             setMessages((prev) => {
-                if (!Array.isArray(prev)) return [msg];
-                if (prev.some((m) => m._id === msg._id)) return prev;
+                if (prev.some((m) => m._id === msg._id)) {
+                    return prev;
+                }
+
                 return [...prev, msg];
             });
         };
 
         socket.on("receive_message", onReceive);
-        return () => socket.off("receive_message", onReceive);
+
+        return () => {
+            socket.off("receive_message", onReceive);
+        };
     }, [roomId]);
 
-    /* ===== SEND MESSAGE ===== */
+    /* ===== SEND ===== */
 
-    const sendChat = () => {
-        if (!messageInput.trim() || !roomId || !activeChat) return;
+    const sendChat = (): void => {
+        if (!messageInput.trim() || !roomId || !activeChat || !userId) {
+            return;
+        }
 
         socket.emit("send_message", {
             roomId,
@@ -306,11 +333,12 @@ const Chat = () => {
         });
 
         setMessages((prev) => [
-            ...(Array.isArray(prev) ? prev : []),
+            ...prev,
             {
                 _id: `local-${Date.now()}`,
                 roomId,
                 senderId: userId,
+                receiverId: activeChat._id,
                 text: messageInput,
             },
         ]);
@@ -318,7 +346,9 @@ const Chat = () => {
         setMessageInput("");
     };
 
-    if (loading) return null;
+    if (loading) {
+        return null;
+    }
 
     return activeChat ? (
         <ChatWindow
@@ -331,7 +361,10 @@ const Chat = () => {
             userId={userId}
         />
     ) : (
-        <ChatList matches={matches} onSelect={setActiveChat} />
+        <ChatList
+            matches={matches}
+            onSelect={setActiveChat}
+        />
     );
 };
 
