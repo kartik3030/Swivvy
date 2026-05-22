@@ -3,63 +3,160 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../component/Navbar";
 
 
-const COUNTRIES = [
+interface Country {
+    value: string;
+    label: string;
+}
+
+interface SignupForm {
+    FName: string;
+    LName: string;
+    email: string;
+    date: string;
+    country: string;
+    password: string;
+    confirmPassword: string;
+}
+
+interface SignupResponse {
+    message?: string;
+}
+
+const COUNTRIES: Country[] = [
     { value: "IN", label: "India" },
     { value: "US", label: "United States" },
     { value: "GB", label: "United Kingdom" },
     { value: "CA", label: "Canada" },
 ];
 
-// Password strength checker
-function getStrength(p) {
+function getStrength(p: string): number {
     let score = 0;
     if (p.length >= 10) score++;
     if (/[A-Z]/.test(p)) score++;
     if (/[a-z]/.test(p)) score++;
     if (/[0-9]/.test(p)) score++;
     if (/[^A-Za-z0-9]/.test(p)) score++;
-    return score; // 0–5
+    return score;
 }
-const strengthLabel = ["", "Weak", "Weak", "Fair", "Good", "Strong"];
-const strengthColor = ["", "#ef4444", "#ef4444", "#f97316", "#eab308", "#22c55e"];
 
-const Signup = () => {
+
+const strengthLabel: string[] = [
+    "",
+    "Weak",
+    "Weak",
+    "Fair",
+    "Good",
+    "Strong",
+];
+
+const strengthColor: string[] = [
+    "",
+    "#ef4444",
+    "#ef4444",
+    "#f97316",
+    "#eab308",
+    "#22c55e",
+];
+
+const nameFields: {
+    name: keyof Pick<SignupForm, "FName" | "LName">;
+    label: string;
+    icon: string;
+    placeholder: string;
+}[] = [
+        {
+            name: "FName",
+            label: "First Name",
+            icon: "badge",
+            placeholder: "Joe",
+        },
+        {
+            name: "LName",
+            label: "Last Name",
+            icon: "badge",
+            placeholder: "Doe",
+        },
+    ];
+
+const Signup = (): React.ReactElement => {
     const navigate = useNavigate();
 
-    const [form, setForm] = useState({
-        FName: "", LName: "", email: "", date: "",
-        country: "", password: "", confirmPassword: "",
+    const [form, setForm] = useState<SignupForm>({
+        FName: "",
+        LName: "",
+        email: "",
+        date: "",
+        country: "",
+        password: "",
+        confirmPassword: "",
     });
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [focused, setFocused] = useState("");
-    const submitLock = useRef(false);
 
-    function onchange(e) {
-        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const [error, setError] = useState<string>("");
+    const [success, setSuccess] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
+    const [focused, setFocused] = useState<string>("");
+
+    const submitLock = useRef<boolean>(false);
+
+    function onchange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void {
+        setForm((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+        }));
     }
 
-    const validateForm = () => {
-        if (form.FName.trim().length < 2) return "First name is too short";
-        if (!form.LName.trim()) return "Last name is required";
-        if (!form.email.trim()) return "Email is required";
-        if (!/^\S+@\S+\.\S+$/.test(form.email)) return "Invalid email address";
-        if (!form.date) return "Date of birth is required";
-        if (!form.country) return "Country is required";
+    const validateForm = (): string | null => {
+        if (form.FName.trim().length < 2) {
+            return "First name is too short";
+        }
+
+        if (!form.LName.trim()) {
+            return "Last name is required";
+        }
+
+        if (!form.email.trim()) {
+            return "Email is required";
+        }
+
+        if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+            return "Invalid email address";
+        }
+
+        if (!form.date) {
+            return "Date of birth is required";
+        }
+
+        if (!form.country) {
+            return "Country is required";
+        }
+
         const p = form.password;
-        if (p.length < 10 || !/[A-Z]/.test(p) || !/[a-z]/.test(p) || !/[0-9]/.test(p))
+
+        if (
+            p.length < 10 ||
+            !/[A-Z]/.test(p) ||
+            !/[a-z]/.test(p) ||
+            !/[0-9]/.test(p)
+        ) {
             return "Password must be at least 10 chars, include uppercase, lowercase, and a number";
-        if (p !== form.confirmPassword) return "Passwords must match";
+        }
+
+        if (p !== form.confirmPassword) {
+            return "Passwords must match";
+        }
+
         return null;
     };
 
-    async function submit(e) {
+    async function submit(
+        e: React.FormEvent<HTMLFormElement>
+    ): Promise<void> {
         e.preventDefault();
 
         if (submitLock.current) return;
 
         const err = validateForm();
+
         if (err) {
             setError(err);
             return;
@@ -90,24 +187,27 @@ const Signup = () => {
                 }
             );
 
-            const data = await res.json();
+            const data: SignupResponse = await res.json();
 
             if (!res.ok) {
                 throw new Error(data.message || "Signup failed");
             }
 
             setSuccess("Account created! Redirecting...");
-            setTimeout(() => navigate("/login"), 1500);
-
-        } catch (err) {
-            setError(err.message || "Signup failed. Try again.");
+            window.setTimeout(() => navigate("/login"), 1500);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Signup failed. Try again.");
+            }
         } finally {
             submitLock.current = false;
             setLoading(false);
         }
     }
 
-    const pwStrength = getStrength(form.password);
+    const pwStrength: number = getStrength(form.password);
 
     return (
         <>
@@ -252,7 +352,7 @@ const Signup = () => {
                                 background: 'rgba(249,115,22,0.07)',
                                 color: '#fb923c', fontSize: '0.78rem', marginBottom: '1.25rem', letterSpacing: '0.05em',
                             }}>
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'blink 1.4s ease-in-out infinite' }} />
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: ' 1.4s ease-in-out infinite' }} />
                                 Free to join
                             </div>
 
@@ -291,17 +391,53 @@ const Signup = () => {
                             <form onSubmit={submit} style={{ position: 'relative', zIndex: 1 }}>
 
                                 {/* Name row */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem', animation: 'fadeUp 0.6s 0.1s both' }}>
-                                    {[
-                                        { name: 'FName', label: 'First Name', icon: 'badge', placeholder: 'Joe' },
-                                        { name: 'LName', label: 'Last Name', icon: 'badge', placeholder: 'Doe' },
-                                    ].map(({ name, label, icon, placeholder }) => (
+                                <div
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: "1fr 1fr",
+                                        gap: "0.75rem",
+                                        marginBottom: "1rem",
+                                        animation: "fadeUp 0.6s 0.1s both",
+                                    }}
+                                >
+                                    {nameFields.map(({ name, label, icon, placeholder }) => (
                                         <div key={name}>
-                                            <label className="su-label" style={{ color: focused === name ? '#f97316' : '#555' }}>{label}</label>
-                                            <div style={{ position: 'relative' }}>
-                                                <span className="material-symbols-outlined" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: focused === name ? '#f97316' : '#333', transition: 'color 0.25s', pointerEvents: 'none' }}>{icon}</span>
-                                                <input type="text" name={name} value={form[name]} onChange={onchange} placeholder={placeholder}
-                                                    className="su-input" onFocus={() => setFocused(name)} onBlur={() => setFocused('')} />
+                                            <label
+                                                className="su-label"
+                                                style={{
+                                                    color: focused === name ? "#f97316" : "#555",
+                                                }}
+                                            >
+                                                {label}
+                                            </label>
+
+                                            <div style={{ position: "relative" }}>
+                                                <span
+                                                    className="material-symbols-outlined"
+                                                    style={{
+                                                        position: "absolute",
+                                                        left: 10,
+                                                        top: "50%",
+                                                        transform: "translateY(-50%)",
+                                                        fontSize: 16,
+                                                        color: focused === name ? "#f97316" : "#333",
+                                                        transition: "color 0.25s",
+                                                        pointerEvents: "none",
+                                                    }}
+                                                >
+                                                    {icon}
+                                                </span>
+
+                                                <input
+                                                    type="text"
+                                                    name={name}
+                                                    value={form[name]}
+                                                    onChange={onchange}
+                                                    placeholder={placeholder}
+                                                    className="su-input"
+                                                    onFocus={() => setFocused(name)}
+                                                    onBlur={() => setFocused("")}
+                                                />
                                             </div>
                                         </div>
                                     ))}
@@ -436,14 +572,76 @@ const Signup = () => {
 };
 
 // ── Reusable field ──
-function Field({ name, label, icon, type, placeholder, value, onChange, focused, setFocused, delay }) {
+interface FieldProps {
+    name: keyof SignupForm;
+    label: string;
+    icon: string;
+    type: React.HTMLInputTypeAttribute;
+    placeholder: string;
+    value: string;
+    onChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => void;
+    focused: string;
+    setFocused: React.Dispatch<React.SetStateAction<string>>;
+    delay: string;
+}
+
+function Field({
+    name,
+    label,
+    icon,
+    type,
+    placeholder,
+    value,
+    onChange,
+    focused,
+    setFocused,
+    delay,
+}: FieldProps): React.ReactElement {
     return (
-        <div style={{ marginBottom: '1rem', animation: `fadeUp 0.6s ${delay} both` }}>
-            <label className="su-label" style={{ color: focused === name ? '#f97316' : '#555' }}>{label}</label>
-            <div style={{ position: 'relative' }}>
-                <span className="material-symbols-outlined" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: focused === name ? '#f97316' : '#333', transition: 'color 0.25s', pointerEvents: 'none' }}>{icon}</span>
-                <input type={type} name={name} value={value} onChange={onChange} placeholder={placeholder}
-                    className="su-input" onFocus={() => setFocused(name)} onBlur={() => setFocused('')} />
+        <div
+            style={{
+                marginBottom: "1rem",
+                animation: `fadeUp 0.6s ${delay} both`,
+            }}
+        >
+            <label
+                className="su-label"
+                style={{
+                    color: focused === name ? "#f97316" : "#555",
+                }}
+            >
+                {label}
+            </label>
+
+            <div style={{ position: "relative" }}>
+                <span
+                    className="material-symbols-outlined"
+                    style={{
+                        position: "absolute",
+                        left: 10,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        fontSize: 16,
+                        color: focused === name ? "#f97316" : "#333",
+                        transition: "color 0.25s",
+                        pointerEvents: "none",
+                    }}
+                >
+                    {icon}
+                </span>
+
+                <input
+                    type={type}
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    placeholder={placeholder}
+                    className="su-input"
+                    onFocus={() => setFocused(name)}
+                    onBlur={() => setFocused("")}
+                />
             </div>
         </div>
     );

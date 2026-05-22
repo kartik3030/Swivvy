@@ -3,21 +3,38 @@ import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../component/Navbar";
 
 
-const Login = () => {
+interface LoginResponse {
+    message?: string;
+}
+
+interface LoginForm {
+    email: string;
+    password: string;
+}
+
+const Login = (): React.ReactElement => {
     const navigate = useNavigate();
 
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [focused, setFocused] = useState("");
-    const [form, setForm] = useState({ email: "", password: "" });
+    const [error, setError] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
+    const [focused, setFocused] = useState<string>("");
+    const [form, setForm] = useState<LoginForm>({
+        email: "",
+        password: "",
+    });
 
-    const submitLock = useRef(false);
+    const submitLock = useRef<boolean>(false);
 
-    function onchange(e) {
-        setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    function onchange(e: React.ChangeEvent<HTMLInputElement>): void {
+        setForm((prev) => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+        }));
     }
 
-    async function submit(e) {
+    async function submit(
+        e: React.FormEvent<HTMLFormElement>
+    ): Promise<void> {
         e.preventDefault();
 
         if (submitLock.current) return;
@@ -52,7 +69,7 @@ const Login = () => {
                 }
             );
 
-            const data = await res.json();
+            const data: LoginResponse = await res.json();
 
             if (!res.ok) {
                 throw new Error(data.message || "Login failed");
@@ -64,9 +81,12 @@ const Login = () => {
             });
 
             navigate("/explore");
-
-        } catch (err) {
-            setError(err.message || "Login failed. Try again.");
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Login failed. Try again.");
+            }
         } finally {
             submitLock.current = false;
             setLoading(false);
@@ -83,10 +103,7 @@ const Login = () => {
           from { opacity: 0; transform: translateY(32px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes blink {
-          0%,100% { opacity: 1; }
-          50%      { opacity: 0; }
-        }
+    
         @keyframes pulseGlow {
           0%,100% { box-shadow: 0 0 20px rgba(249,115,22,0.15); }
           50%      { box-shadow: 0 0 40px rgba(249,115,22,0.4); }
@@ -223,7 +240,7 @@ const Login = () => {
                                 color: '#fb923c', fontSize: '0.78rem',
                                 marginBottom: '1.25rem', letterSpacing: '0.05em',
                             }}>
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'blink 1.4s ease-in-out infinite' }} />
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: ' 1.4s ease-in-out ' }} />
                                 Secure Login
                             </div>
 

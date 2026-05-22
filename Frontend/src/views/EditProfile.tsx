@@ -2,32 +2,53 @@ import React, { useState, useEffect } from "react";
 import Navbar2 from "../component/Navbar2";
 import { useNavigate } from "react-router-dom";
 
-/* ================= IMAGE RESOLVER ================= */
+interface FormBody {
+    profilePhoto: File | null;
+    FName: string;
+    LName: string;
+    email: string;
+    bio: string;
+    country: string;
+    skills: string[];
+}
 
-const resolveImage = (path) => {
+interface BackendData {
+    profilePhoto?: string;
+    FName?: string;
+    LName?: string;
+    email?: string;
+    bio?: string;
+    country?: string;
+    skills?: string[] | string;
+}
+
+const resolveImage = (path?: string): string => {
     if (!path) {
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
     }
+
     if (path.startsWith("http")) return path;
+
     if (path.startsWith("/uploads")) {
         return `${import.meta.env.VITE_API_URL}${path}`;
     }
+
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
 
 const EditProfile = () => {
     const navigate = useNavigate();
 
-    const [disable, setDisable] = useState(false);
-    const [error, setError] = useState("");
-    const [successMsg, setSuccessMsg] = useState("");
-    const [backendData, setBackendData] = useState(null);
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [preview, setPreview] = useState(null);
-    const [newSkill, setNewSkill] = useState("");
-    const [fileName, setFileName] = useState("");
+    const [disable, setDisable] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
+    const [successMsg, setSuccessMsg] = useState<string>("");
+    const [backendData, setBackendData] = useState<BackendData | null>(null);
+    const [showConfirm, setShowConfirm] = useState<boolean>(false);
+    const [preview, setPreview] = useState<string | null>(null);
+    const [newSkill, setNewSkill] = useState<string>("");
+    const [fileName, setFileName] = useState<string>("");
 
-    const [form, editForm] = useState({
+    const [form, editForm] = useState<FormBody>({
         profilePhoto: null,
         FName: "",
         LName: "",
@@ -37,26 +58,29 @@ const EditProfile = () => {
         skills: [],
     });
 
-    /* ===== Normalize backend skills ===== */
-    const normalizeSkills = (value) => {
+    const normalizeSkills = (value?: string[] | string): string[] => {
         if (!value) return [];
         if (Array.isArray(value)) return value;
-        if (typeof value === "string")
+        if (typeof value === "string") {
             return value.split(",").map((s) => s.trim());
+        }
         return [];
     };
 
-    /* ===== Fetch logged-in user ===== */
     useEffect(() => {
-        const fetchUser = async () => {
+        const fetchUser = async (): Promise<void> => {
             try {
                 const res = await fetch(
                     `${import.meta.env.VITE_API_URL}/api/me`,
                     { credentials: "include" }
                 );
+
                 if (!res.ok) throw new Error("Unauthorized");
-                const data = await res.json();
+
+                const data: BackendData = await res.json();
+
                 setBackendData(data);
+
                 editForm({
                     profilePhoto: null,
                     FName: data.FName || "",
@@ -70,55 +94,71 @@ const EditProfile = () => {
                 navigate("/");
             }
         };
+
         fetchUser();
     }, [navigate]);
 
-    /* ===== Input change ===== */
-    function onChange(e) {
+    function onChange(
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ): void {
         const { name, value } = e.target;
-        editForm((prev) => ({ ...prev, [name]: value }));
+
+        editForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     }
 
-    /* ===== Add Skill ===== */
-    function addNewSkill() {
+    function addNewSkill(): void {
         const trim = newSkill.trim();
+
         if (!trim) return;
+
         editForm((prev) => {
             if (prev.skills.includes(trim)) {
                 setError("Skill already added");
                 return prev;
             }
+
             setError("");
-            return { ...prev, skills: [...prev.skills, trim] };
+
+            return {
+                ...prev,
+                skills: [...prev.skills, trim],
+            };
         });
+
         setNewSkill("");
     }
 
-    /* ===== Remove Skill ===== */
-    function removeSkill(skill) {
+    function removeSkill(skill: string): void {
         editForm((prev) => ({
             ...prev,
             skills: prev.skills.filter((s) => s !== skill),
         }));
     }
 
-    /* ===== Submit ===== */
-    async function submit(e) {
+    async function submit(
+        e: React.FormEvent<HTMLFormElement>
+    ): Promise<void> {
         e.preventDefault();
+
         if (!form.FName || !form.LName || !form.bio || form.skills.length === 0) {
             setError("All fields are required");
             return;
         }
+
         setDisable(true);
         setError("");
         setSuccessMsg("");
+
         try {
             const formData = new FormData();
 
             formData.append("FName", form.FName);
             formData.append("LName", form.LName);
             formData.append("bio", form.bio);
-            formData.append("country", form.country);   // ADD THIS
+            formData.append("country", form.country);
             formData.append("email", form.email);
 
             form.skills.forEach((s) => formData.append("skills", s));
@@ -146,34 +186,44 @@ const EditProfile = () => {
             setBackendData(data);
             setPreview(null);
             setFileName("");
-
         } catch (err) {
-            setError(err.message || "Something went wrong while saving");
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Something went wrong while saving");
+            }
         } finally {
             setDisable(false);
         }
     }
 
-    /* ===== File Preview ===== */
-    const handleFileChange = (e) => {
+    const handleFileChange = (
+        e: React.ChangeEvent<HTMLInputElement>
+    ): void => {
         const file = e.target.files?.[0] || null;
-        editForm((prev) => ({ ...prev, profilePhoto: file }));
+
+        editForm((prev) => ({
+            ...prev,
+            profilePhoto: file,
+        }));
+
         setPreview(file ? URL.createObjectURL(file) : null);
         setFileName(file ? file.name : "");
     };
 
-    /* ===== Discard ===== */
-    const handleDiscard = () => {
+    const handleDiscard = (): void => {
         if (backendData) {
             editForm({
                 profilePhoto: null,
                 FName: backendData.FName || "",
                 LName: backendData.LName || "",
                 bio: backendData.bio || "",
+                country: backendData.country || "",
                 skills: normalizeSkills(backendData.skills),
                 email: backendData.email || "",
             });
         }
+
         setShowConfirm(false);
         setPreview(null);
         setFileName("");
@@ -181,11 +231,12 @@ const EditProfile = () => {
         setSuccessMsg("");
     };
 
-    /* ===== Loading ===== */
     if (!backendData) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
-                <span className="text-sm text-gray-400 animate-pulse">Loading...</span>
+                <span className="text-sm text-gray-400 animate-pulse">
+                    Loading...
+                </span>
             </div>
         );
     }

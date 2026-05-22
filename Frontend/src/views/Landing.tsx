@@ -11,7 +11,9 @@ const Footer = () => (
 )
 
 // ── Hook: intersection observer for reveal animations ──
-function useReveal(threshold = 0.15) {
+function useReveal(
+    threshold: number = 0.15
+): [React.RefObject<HTMLDivElement | null>, boolean] {
     const ref = useRef(null)
     const [visible, setVisible] = useState(false)
     useEffect(() => {
@@ -25,59 +27,191 @@ function useReveal(threshold = 0.15) {
 }
 
 // ── Floating card component ──
-const FloatCard = ({ src, name, sub, accent, delay = 0, style = {} }) => (
-    <div style={{
-        background: 'rgba(10,10,10,0.9)',
-        border: `1px solid ${accent}`,
-        borderRadius: 16,
-        padding: '1rem',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-        animation: `floatY 4s ease-in-out ${delay}s infinite alternate`,
-        transition: 'border-color 0.3s, box-shadow 0.3s',
-        cursor: 'default',
-        ...style,
-    }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = '#f97316'; e.currentTarget.style.boxShadow = '0 0 24px rgba(249,115,22,0.25)' }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = 'none' }}
+interface FloatCardProps {
+    src: string;
+    name: string;
+    sub: string;
+    accent: string;
+    delay?: number;
+    style?: React.CSSProperties;
+}
+
+const FloatCard = ({
+    src,
+    name,
+    sub,
+    accent,
+    delay = 0,
+    style = {},
+}: FloatCardProps): React.ReactElement => (
+    <div
+        style={{
+            background: "rgba(10,10,10,0.9)",
+            border: `1px solid ${accent}`,
+            borderRadius: 16,
+            padding: "1rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 8,
+            animation: `floatY 4s ease-in-out ${delay}s infinite alternate`,
+            transition: "border-color 0.3s, box-shadow 0.3s",
+            cursor: "default",
+            ...style,
+        }}
+        onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+            e.currentTarget.style.borderColor = "#f97316";
+            e.currentTarget.style.boxShadow =
+                "0 0 24px rgba(249,115,22,0.25)";
+        }}
+        onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+            e.currentTarget.style.borderColor = accent;
+            e.currentTarget.style.boxShadow = "none";
+        }}
     >
-        <img src={src} alt={name} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 12 }} />
-        <span style={{ color: '#fff', fontWeight: 800, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.05em', fontSize: '1.1rem' }}>{name}</span>
-        <span style={{ color: '#aaa', fontSize: '0.75rem' }}>{sub}</span>
-        <button style={{ marginTop: 4, padding: '0.35rem 1.4rem', borderRadius: 999, background: 'linear-gradient(135deg,#f97316,#c2410c)', color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>Chat</button>
+        <img
+            src={src}
+            alt={name}
+            style={{
+                width: 80,
+                height: 80,
+                objectFit: "cover",
+                borderRadius: 12,
+            }}
+        />
+
+        <span
+            style={{
+                color: "#fff",
+                fontWeight: 800,
+                fontFamily: "'Bebas Neue', sans-serif",
+                letterSpacing: "0.05em",
+                fontSize: "1.1rem",
+            }}
+        >
+            {name}
+        </span>
+
+        <span
+            style={{
+                color: "#aaa",
+                fontSize: "0.75rem",
+            }}
+        >
+            {sub}
+        </span>
+
+        <button
+            style={{
+                marginTop: 4,
+                padding: "0.35rem 1.4rem",
+                borderRadius: 999,
+                background: "linear-gradient(135deg,#f97316,#c2410c)",
+                color: "#fff",
+                fontWeight: 700,
+                border: "none",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+            }}
+        >
+            Chat
+        </button>
     </div>
-)
+);
 
 // ── Step card ──
-const StepCard = ({ icon, label, active }) => (
-    <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: 8, padding: '1.5rem 1rem', borderRadius: 12,
-        background: active ? 'linear-gradient(135deg,#7f1d1d,#991b1b)' : 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        color: '#fff', transition: 'all 0.3s', cursor: 'default', minWidth: 130,
-    }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#7f1d1d,#991b1b)'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(153,27,27,0.4)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = active ? 'linear-gradient(135deg,#7f1d1d,#991b1b)' : 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
+interface StepCardProps {
+    icon: string;
+    label: string;
+    active?: boolean;
+}
+
+const StepCard = ({
+    icon,
+    label,
+    active = false,
+}: StepCardProps): React.ReactElement => (
+    <div
+        style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: "1.5rem 1rem",
+            borderRadius: 12,
+            background: active
+                ? "linear-gradient(135deg,#7f1d1d,#991b1b)"
+                : "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "#fff",
+            transition: "all 0.3s",
+            cursor: "default",
+            minWidth: 130,
+        }}
+        onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+            e.currentTarget.style.background =
+                "linear-gradient(135deg,#7f1d1d,#991b1b)";
+            e.currentTarget.style.transform = "translateY(-4px)";
+            e.currentTarget.style.boxShadow =
+                "0 12px 32px rgba(153,27,27,0.4)";
+        }}
+        onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+            e.currentTarget.style.background = active
+                ? "linear-gradient(135deg,#7f1d1d,#991b1b)"
+                : "rgba(255,255,255,0.05)";
+            e.currentTarget.style.transform = "none";
+            e.currentTarget.style.boxShadow = "none";
+        }}
     >
-        <span className="material-symbols-outlined" style={{ fontSize: 32, color: active ? '#fff' : '#f97316' }}>{icon}</span>
-        <span style={{ fontFamily: "'Bebas Neue', sans-serif", letterSpacing: '0.06em', fontSize: '1rem' }}>{label}</span>
+        <span
+            className="material-symbols-outlined"
+            style={{
+                fontSize: 32,
+                color: active ? "#fff" : "#f97316",
+            }}
+        >
+            {icon}
+        </span>
+
+        <span
+            style={{
+                fontFamily: "'Bebas Neue', sans-serif",
+                letterSpacing: "0.06em",
+                fontSize: "1rem",
+            }}
+        >
+            {label}
+        </span>
     </div>
-)
+);
 
 // ── Section wrapper ──
-const Section = ({ children, style = {} }) => {
-    const [ref, vis] = useReveal()
+interface SectionProps {
+    children: React.ReactNode;
+    style?: React.CSSProperties;
+}
+
+const Section = ({
+    children,
+    style = {},
+}: SectionProps): React.ReactElement => {
+    const [ref, vis] = useReveal();
+
     return (
-        <div ref={ref} style={{
-            opacity: vis ? 1 : 0,
-            transform: vis ? 'translateY(0)' : 'translateY(40px)',
-            transition: 'opacity 0.8s ease, transform 0.8s ease',
-            ...style,
-        }}>
+        <div
+            ref={ref}
+            style={{
+                opacity: vis ? 1 : 0,
+                transform: vis ? "translateY(0)" : "translateY(40px)",
+                transition: "opacity 0.8s ease, transform 0.8s ease",
+                ...style,
+            }}
+        >
             {children}
         </div>
-    )
-}
+    );
+};
 
 const Landing = () => {
     const [scrollY, setScrollY] = useState(0)
@@ -199,10 +333,6 @@ const Landing = () => {
 
                     {/* Left */}
                     <div style={{ flex: '1 1 400px', maxWidth: 560 }}>
-                        <div className="stat-pill" style={{ marginBottom: '1.5rem' }}>
-                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'blink 1.4s ease-in-out infinite' }} />
-                            2,400+ people connected today
-                        </div>
 
                         <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", lineHeight: 0.92, letterSpacing: '0.02em' }}>
                             {['Find', 'people', 'by skills,', 'not by resume'].map((w, i) => (
@@ -538,21 +668,92 @@ function SwipeCard() {
 }
 
 // ── Mini profile card ──
-function MiniProfileCard({ src, name, sub }) {
+interface MiniProfileCardProps {
+    src: string;
+    name: string;
+    sub: string;
+}
+
+function MiniProfileCard({
+    src,
+    name,
+    sub,
+}: MiniProfileCardProps): React.ReactElement {
     return (
-        <div style={{
-            background: 'rgba(10,10,10,0.9)', border: '1px solid rgba(156,163,175,0.2)',
-            borderRadius: 14, padding: '0.75rem', width: 130, transition: 'border-color 0.3s, transform 0.3s',
-        }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#f97316'; e.currentTarget.style.transform = 'translateY(-4px)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(156,163,175,0.2)'; e.currentTarget.style.transform = 'none' }}
+        <div
+            style={{
+                background: "rgba(10,10,10,0.9)",
+                border: "1px solid rgba(156,163,175,0.2)",
+                borderRadius: 14,
+                padding: "0.75rem",
+                width: 130,
+                transition: "border-color 0.3s, transform 0.3s",
+            }}
+            onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                e.currentTarget.style.borderColor = "#f97316";
+                e.currentTarget.style.transform = "translateY(-4px)";
+            }}
+            onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                e.currentTarget.style.borderColor =
+                    "rgba(156,163,175,0.2)";
+                e.currentTarget.style.transform = "none";
+            }}
         >
-            <img src={src} alt={name} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 10 }} />
-            <h4 style={{ color: '#fff', textAlign: 'center', fontWeight: 800, marginTop: 6, fontFamily: "'Bebas Neue', sans-serif", fontSize: '1rem', letterSpacing: '0.05em' }}>{name}</h4>
-            <p style={{ color: '#888', textAlign: 'center', fontSize: '0.7rem', marginTop: 2 }}>{sub}</p>
-            <button style={{ marginTop: 8, width: '100%', padding: '0.3rem', borderRadius: 999, background: 'linear-gradient(135deg,#f97316,#c2410c)', color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>Chat</button>
+            <img
+                src={src}
+                alt={name}
+                style={{
+                    width: "100%",
+                    height: 100,
+                    objectFit: "cover",
+                    borderRadius: 10,
+                }}
+            />
+
+            <h4
+                style={{
+                    color: "#fff",
+                    textAlign: "center",
+                    fontWeight: 800,
+                    marginTop: 6,
+                    fontFamily: "'Bebas Neue', sans-serif",
+                    fontSize: "1rem",
+                    letterSpacing: "0.05em",
+                }}
+            >
+                {name}
+            </h4>
+
+            <p
+                style={{
+                    color: "#888",
+                    textAlign: "center",
+                    fontSize: "0.7rem",
+                    marginTop: 2,
+                }}
+            >
+                {sub}
+            </p>
+
+            <button
+                style={{
+                    marginTop: 8,
+                    width: "100%",
+                    padding: "0.3rem",
+                    borderRadius: 999,
+                    background:
+                        "linear-gradient(135deg,#f97316,#c2410c)",
+                    color: "#fff",
+                    fontWeight: 700,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "0.75rem",
+                }}
+            >
+                Chat
+            </button>
         </div>
-    )
+    );
 }
 
 // ── Chat preview ──
