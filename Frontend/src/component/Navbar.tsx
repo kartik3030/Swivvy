@@ -107,14 +107,7 @@ const Navbar = () => {
           transform: scaleX(1);
         }
 
-        .nav-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #22c55e;
-          animation: blink 1.4s ease-in-out infinite;
-          flex-shrink: 0;
-        }
+     
       `}</style>
 
             <nav
@@ -156,7 +149,7 @@ const Navbar = () => {
                             gap: 8,
                         }}
                     >
-                        <span className="nav-dot" />
+                        <span className="" />
                         SWIVVY
                     </Link>
 

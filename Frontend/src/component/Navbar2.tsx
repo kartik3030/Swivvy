@@ -101,14 +101,7 @@ const Navbar = () => {
           transform: scaleX(1);
         }
 
-        .nav-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #22c55e;
-          animation: blink 1.4s ease-in-out infinite;
-          flex-shrink: 0;
-        }
+     
 
         .nav-avatar-wrap {
           position: relative;
@@ -188,14 +181,13 @@ const Navbar = () => {
                             gap: 8,
                         }}
                     >
-                        <span className="nav-dot" />
+                        <span />
                         SWIVVY
                     </Link>
 
                     <Link to="/profile" style={{ textDecoration: "none" }}>
                         <div className="nav-avatar-wrap">
                             <AvatarImg user={user} />
-                            <span className="nav-avatar-online" />
                         </div>
                     </Link>
                 </div>

@@ -2,9 +2,24 @@ import React, { useEffect, useRef, useState } from "react";
 import Navbar2 from "../component/Navbar2";
 import { Link, useNavigate } from "react-router-dom";
 
+interface BackendUser {
+    _id?: string;
+    FName?: string;
+    LName?: string;
+    email?: string;
+    bio?: string;
+    country?: string;
+    profilePhoto?: string;
+    skills?: string[];
+}
+
+interface DeleteResponse {
+    error?: string;
+}
+
 /* ================= IMAGE RESOLVER ================= */
 
-const resolveImage = (path) => {
+const resolveImage = (path?: string): string => {
     if (!path) {
         return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
     }
@@ -15,25 +30,25 @@ const resolveImage = (path) => {
     return "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 };
 
-const ProfilePage = () => {
-    const [backendData, setBackendData] = useState(null);
-    const [showConfirm, setShowConfirm] = useState(false);
-    const [loading, setLoading] = useState(true);
+const ProfilePage = (): React.ReactElement | null => {
+    const [backendData, setBackendData] = useState<BackendUser | null>(null);
+    const [showConfirm, setShowConfirm] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
 
     const navigate = useNavigate();
-    const actionLock = useRef(false);
+    const actionLock = useRef<boolean>(false);
 
     /* ================= AUTH + FETCH USER ================= */
 
     useEffect(() => {
-        const fetchUser = async () => {
+        const fetchUser = async (): Promise<void> => {
             try {
                 const res = await fetch(
                     `${import.meta.env.VITE_API_URL}/api/me`,
                     { credentials: "include" }
                 );
                 if (!res.ok) throw new Error("Unauthorized");
-                const data = await res.json();
+                const data: BackendUser = await res.json();
                 setBackendData(data);
                 setLoading(false);
             } catch {
@@ -46,7 +61,7 @@ const ProfilePage = () => {
 
     /* ================= LOGOUT ================= */
 
-    const handleLogout = async () => {
+    const handleLogout = async (): Promise<void> => {
         if (actionLock.current) return;
         actionLock.current = true;
 
@@ -58,16 +73,17 @@ const ProfilePage = () => {
                     "Content-Type": "application/json",
                 },
             });
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Logout error:", err);
         } finally {
+            actionLock.current = false;
             navigate("/login");
         }
     };
 
     /* ================= DELETE ACCOUNT ================= */
 
-    const handleConfirmDelete = async () => {
+    const handleConfirmDelete = async (): Promise<void> => {
         if (actionLock.current) return;
 
         actionLock.current = true;
@@ -81,27 +97,29 @@ const ProfilePage = () => {
                 }
             );
 
-            const data = await res.json();
+            const data: DeleteResponse = await res.json();
 
             if (!res.ok) {
                 throw new Error(data.error || "Delete failed");
             }
 
             navigate("/signup");
-
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Delete account error:", err);
         } finally {
             actionLock.current = false;
             setShowConfirm(false);
         }
     };
+
     /* ================= LOADING ================= */
 
     if (loading) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
-                <span className="text-sm text-gray-400 animate-pulse">Loading...</span>
+                <span className="text-sm text-gray-400 animate-pulse">
+                    Loading...
+                </span>
             </div>
         );
     }
@@ -258,7 +276,7 @@ const ProfilePage = () => {
                     <div
                         className="bg-[#111] border border-white/12 rounded-2xl p-7 w-[300px]"
                         style={{ animation: "scaleIn .25s cubic-bezier(.22,.68,0,1.2) both" }}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
                     >
                         <h3 className="text-[17px] font-semibold text-center mb-1">
                             Delete Account?

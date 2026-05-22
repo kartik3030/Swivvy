@@ -312,136 +312,248 @@ const injectStyles = () => {
     document.head.appendChild(s);
 };
 
-/* ─── Hook: bounce animation on a ref ─── */
-const useBounce = () => {
-    const ref = useRef(null);
-    const trigger = () => {
+interface User {
+    _id: string;
+    FName: string;
+    LName?: string;
+    profilePhoto?: string;
+    bio?: string;
+    country?: string;
+    skills?: string[];
+}
+
+interface MatchResponse {
+    match?: boolean;
+}
+
+const useBounce = (): [
+    React.RefObject<HTMLButtonElement | null>,
+    () => void
+] => {
+    const ref = useRef<HTMLButtonElement>(null);
+
+    const trigger = (): void => {
         const el = ref.current;
         if (!el) return;
+
         el.classList.remove("ep-btn-bouncing");
         void el.offsetWidth;
         el.classList.add("ep-btn-bouncing");
-        setTimeout(() => el.classList.remove("ep-btn-bouncing"), 380);
+
+        window.setTimeout(() => {
+            el.classList.remove("ep-btn-bouncing");
+        }, 380);
     };
+
     return [ref, trigger];
 };
 
 /* ════════════════════════════════════════
    ExplorePage
 ════════════════════════════════════════ */
-const ExplorePage = () => {
-    const [user, setUser] = useState(null);
-    const [users, setUsers] = useState([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isSwiping, setIsSwiping] = useState(false);
-    const [swipeDir, setSwipeDir] = useState(null);
-    const [matchedUser, setMatchedUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+const ExplorePage = (): React.ReactElement => {
+    const [user, setUser] = useState<User | null>(null);
+    const [users, setUsers] = useState<User[]>([]);
+    const [currentIndex, setCurrentIndex] = useState<number>(0);
+    const [isSwiping, setIsSwiping] = useState<boolean>(false);
+    const [swipeDir, setSwipeDir] = useState<"left" | "right" | null>(null);
+    const [matchedUser, setMatchedUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
 
-    const swipeLock = useRef(false);
+    const swipeLock = useRef<boolean>(false);
     const navigate = useNavigate();
 
     const [rejectRef, bounceReject] = useBounce();
     const [acceptRef, bounceAccept] = useBounce();
 
-    useEffect(() => { injectStyles(); }, []);
+    useEffect(() => {
+        injectStyles();
+    }, []);
 
     /* ── Auth ── */
     useEffect(() => {
         let cancelled = false;
-        const checkAuth = async () => {
+
+        const checkAuth = async (): Promise<void> => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, { credentials: "include" });
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/me`,
+                    {
+                        credentials: "include",
+                    }
+                );
+
                 if (res.status === 401) {
-                    if (!cancelled) { setUser(null); setLoading(false); navigate("/"); }
+                    if (!cancelled) {
+                        setUser(null);
+                        setLoading(false);
+                        navigate("/");
+                    }
                     return;
                 }
-                const data = await res.json();
-                if (!cancelled) { setUser(data); setLoading(false); }
+
+                const data: User = await res.json();
+
+                if (!cancelled) {
+                    setUser(data);
+                    setLoading(false);
+                }
             } catch (err) {
                 console.error("Auth error:", err);
-                if (!cancelled) { setLoading(false); navigate("/"); }
+
+                if (!cancelled) {
+                    setLoading(false);
+                    navigate("/");
+                }
             }
         };
+
         checkAuth();
-        return () => { cancelled = true; };
+
+        return () => {
+            cancelled = true;
+        };
     }, [navigate]);
 
     /* ── Fetch users ── */
     useEffect(() => {
         if (!user) return;
+
         let cancelled = false;
-        const fetchUsers = async () => {
+
+        const fetchUsers = async (): Promise<void> => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/feed`, { credentials: "include" });
-                if (!res.ok) throw new Error("Failed to fetch users");
-                const data = await res.json();
-                if (!cancelled) { setUsers(Array.isArray(data) ? data : []); setCurrentIndex(0); }
+                const res = await fetch(
+                    `${import.meta.env.VITE_API_URL}/api/feed`,
+                    {
+                        credentials: "include",
+                    }
+                );
+
+                if (!res.ok) {
+                    throw new Error("Failed to fetch users");
+                }
+
+                const data: User[] = await res.json();
+
+                if (!cancelled) {
+                    setUsers(Array.isArray(data) ? data : []);
+                    setCurrentIndex(0);
+                }
             } catch (err) {
                 console.error("Fetch users error:", err);
             }
         };
+
         fetchUsers();
-        return () => { cancelled = true; };
+
+        return () => {
+            cancelled = true;
+        };
     }, [user]);
 
-    const currentUser = users.length > 0 && currentIndex < users.length ? users[currentIndex] : null;
+    const currentUser: User | null =
+        users.length > 0 && currentIndex < users.length
+            ? users[currentIndex]
+            : null;
 
     /* ── Helpers ── */
-    const moveToNext = () =>
-        setCurrentIndex((prev) => (prev + 1 >= users.length ? prev : prev + 1));
+    const moveToNext = (): void => {
+        setCurrentIndex((prev) =>
+            prev + 1 >= users.length ? prev : prev + 1
+        );
+    };
 
-    const closeMatch = () => { setMatchedUser(null); moveToNext(); };
+    const closeMatch = (): void => {
+        setMatchedUser(null);
+        moveToNext();
+    };
 
     /* ── Right swipe ── */
-    const handleRightSwipe = async () => {
+    const handleRightSwipe = async (): Promise<void> => {
         if (!currentUser || swipeLock.current) return;
+
         swipeLock.current = true;
         setIsSwiping(true);
         setSwipeDir("right");
         bounceAccept();
+
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/swipe/rightSwipe`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userOnFeed: currentUser._id }),
-            });
-            if (!res.ok) throw new Error("Right swipe failed");
-            const data = await res.json();
-            if (data?.match) setMatchedUser(currentUser);
-            else moveToNext();
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/swipe/rightSwipe`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        userOnFeed: currentUser._id,
+                    }),
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error("Right swipe failed");
+            }
+
+            const data: MatchResponse = await res.json();
+
+            if (data.match) {
+                setMatchedUser(currentUser);
+            } else {
+                moveToNext();
+            }
         } catch (err) {
             console.error("Right swipe error:", err);
         } finally {
             swipeLock.current = false;
             setIsSwiping(false);
-            setTimeout(() => setSwipeDir(null), 350);
+
+            setTimeout(() => {
+                setSwipeDir(null);
+            }, 350);
         }
     };
 
     /* ── Left swipe ── */
-    const handleLeftSwipe = async () => {
+    const handleLeftSwipe = async (): Promise<void> => {
         if (!currentUser || swipeLock.current) return;
+
         swipeLock.current = true;
         setIsSwiping(true);
         setSwipeDir("left");
         bounceReject();
+
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/swipe/leftSwipe`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userOnFeed: currentUser._id }),
-            });
-            if (!res.ok) throw new Error("Left swipe failed");
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/swipe/leftSwipe`,
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        userOnFeed: currentUser._id,
+                    }),
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error("Left swipe failed");
+            }
+
             moveToNext();
         } catch (err) {
             console.error("Left swipe error:", err);
         } finally {
             swipeLock.current = false;
             setIsSwiping(false);
-            setTimeout(() => setSwipeDir(null), 350);
+
+            setTimeout(() => {
+                setSwipeDir(null);
+            }, 350);
         }
     };
 
@@ -454,7 +566,6 @@ const ExplorePage = () => {
             </div>
         );
     }
-
     /* ── Render ── */
     return (
         <div className="ep-root">
@@ -477,9 +588,9 @@ const ExplorePage = () => {
                         <div className="ep-hint ep-hint-left" />
                         <div className="ep-hint ep-hint-right" />
 
-                        {currentUser ? (
+                        {currentUser !== null ? (
                             <SwipeCard
-                                user={currentUser}
+                                user={currentUser as User}
                                 onAccept={handleRightSwipe}
                                 onReject={handleLeftSwipe}
                                 matchedUser={matchedUser}
@@ -489,7 +600,9 @@ const ExplorePage = () => {
                             <div className="ep-empty">
                                 <div className="ep-empty-icon">👀</div>
                                 <div className="ep-empty-title">You've seen everyone</div>
-                                <div className="ep-empty-sub">Check back later for new profiles</div>
+                                <div className="ep-empty-sub">
+                                    Check back later for new profiles
+                                </div>
                             </div>
                         )}
                     </div>
@@ -549,7 +662,11 @@ const ExplorePage = () => {
                     role="dialog"
                     aria-modal="true"
                     aria-label="It's a match!"
-                    onClick={(e) => { if (e.target === e.currentTarget) closeMatch(); }}
+                    onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                        if (e.target === e.currentTarget) {
+                            closeMatch();
+                        }
+                    }}
                 >
                     <div className="ep-match-card">
 
@@ -562,8 +679,9 @@ const ExplorePage = () => {
                         <div className="ep-match-title">It's a Match!</div>
 
                         <p className="ep-match-sub">
-                            You and <strong>{matchedUser?.name || "this person"}</strong> liked each other.
-                            <br />Start a conversation!
+                            You and <strong>{matchedUser?.FName}</strong> liked each other.
+                            <br />
+                            Start a conversation!
                         </p>
 
                         <button className="ep-match-cta" onClick={closeMatch}>
