@@ -2,12 +2,13 @@ import User from "../models/user";
 import Message from "../models/messages";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import cloudinary from "../config/cloudinary";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary";
 import { Request, Response, NextFunction } from "express";
 
 const cookieOptions = {
     httpOnly: true,
     path: "/",
-    maxAge: 24 * 60 * 60 * 1000,
 };
 
 interface SignupBody {
@@ -43,6 +44,7 @@ interface ProfileUpdates {
     country?: string;
     skills?: string[];
     profilePhoto?: string;
+    profilePhotoPublicId?: string;
 }
 
 // signup controller
@@ -223,8 +225,30 @@ const editProfile = async (
             }
         }
 
+        const user = await User.findById(req.user.id);
+
+        if (!user) {
+            res.status(404).json({
+                error: "User not found",
+            });
+            return;
+        }
+
         if (req.file) {
-            updates.profilePhoto = `/uploads/${req.file.filename}`;
+            if (user.profilePhotoPublicId) {
+                await cloudinary.uploader.destroy(
+                    user.profilePhotoPublicId
+                );
+            }
+
+            const result = await uploadToCloudinary(
+                req.file.buffer
+            );
+
+            updates.profilePhoto = result.secure_url;
+
+            (updates as any).profilePhotoPublicId =
+                result.public_id;
         }
 
         const updatedUser = await User.findByIdAndUpdate(
@@ -235,13 +259,6 @@ const editProfile = async (
                 runValidators: true,
             }
         ).select("-password");
-
-        if (!updatedUser) {
-            res.status(404).json({
-                error: "User not found",
-            });
-            return;
-        }
 
         res.json(updatedUser);
 

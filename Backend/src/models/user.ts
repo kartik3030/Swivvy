@@ -10,6 +10,7 @@ export interface IUser extends Document {
     skills: string[];
     role: string;
     profilePhoto: string;
+    profilePhotoPublicId: string;
     likes: Types.ObjectId[];
     matches: Types.ObjectId[];
     swipedUsers: Types.ObjectId[];
@@ -71,11 +72,15 @@ const userSchema = new Schema<IUser>(
                 "https://i.pinimg.com/736x/7e/8c/81/7e8c8119bf240d4971880006afb7e1e6.jpg",
         },
 
+        profilePhotoPublicId: {
+            type: String,
+            default: "",
+        },
+
         likes: [
             {
                 type: Schema.Types.ObjectId,
                 ref: "User",
-                default: [],
             },
         ],
 
@@ -83,7 +88,6 @@ const userSchema = new Schema<IUser>(
             {
                 type: Schema.Types.ObjectId,
                 ref: "User",
-                default: [],
             },
         ],
 
@@ -91,7 +95,6 @@ const userSchema = new Schema<IUser>(
             {
                 type: Schema.Types.ObjectId,
                 ref: "User",
-                default: [],
             },
         ],
     },
@@ -100,6 +103,9 @@ const userSchema = new Schema<IUser>(
     }
 );
 
-const User: Model<IUser> = mongoose.model<IUser>("User", userSchema);
+const User: Model<IUser> = mongoose.model<IUser>(
+    "User",
+    userSchema
+);
 
 export default User;
