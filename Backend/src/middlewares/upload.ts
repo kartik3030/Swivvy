@@ -1,34 +1,7 @@
 import multer, { FileFilterCallback } from "multer";
-import fs from "fs";
-import path from "path";
 
-// uploads folder path
-const uploadsDir = path.join(__dirname, "../uploads");
+const storage = multer.memoryStorage();
 
-// create uploads folder if missing
-fs.mkdirSync(uploadsDir, { recursive: true });
-
-// multer storage config
-const storage = multer.diskStorage({
-    destination: (
-        req: Express.Request,
-        file: Express.Multer.File,
-        cb: (error: Error | null, destination: string) => void
-    ): void => {
-        cb(null, uploadsDir);
-    },
-
-    filename: (
-        req: Express.Request,
-        file: Express.Multer.File,
-        cb: (error: Error | null, filename: string) => void
-    ): void => {
-        const ext = path.extname(file.originalname);
-        cb(null, `${Date.now()}${ext}`);
-    },
-});
-
-// upload middleware
 const upload = multer({
     storage,
 

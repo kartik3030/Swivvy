@@ -45,15 +45,7 @@ const FALLBACK_IMG =
     "https://i.pinimg.com/474x/3d/8d/b1/3d8db18cc50c15523a13908a593a480c.jpg";
 
 const resolveImage = (path?: string): string => {
-    if (!path) return FALLBACK_IMG;
-
-    if (path.startsWith("http")) return path;
-
-    if (path.startsWith("/uploads")) {
-        return `${import.meta.env.VITE_API_URL}${path}`;
-    }
-
-    return FALLBACK_IMG;
+    return path || FALLBACK_IMG;
 };
 
 /* ================= CHAT LIST ================= */
