@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from "express";
 interface JwtPayload {
     id: string;
     email: string;
+    exp: number;
 }
 
 interface AuthRequest extends Request {
@@ -24,24 +25,42 @@ const requireAuth = (
         return;
     }
 
-    if (!process.env.JWT_SECRET) {
-        res.status(500).json({
-            error: "JWT_SECRET missing",
-        });
-        return;
-    }
-
     try {
         const decoded = jwt.verify(
             token,
-            process.env.JWT_SECRET
+            process.env.JWT_SECRET!
         ) as JwtPayload;
+
+        const now = Math.floor(Date.now() / 1000);
+
+        const remainingSeconds =
+            decoded.exp - now;
+
+        // Refresh if less than 12 hours remain
+        if (remainingSeconds < 12 * 60 * 60) {
+            const newToken = jwt.sign(
+                {
+                    id: decoded.id,
+                    email: decoded.email,
+                },
+                process.env.JWT_SECRET!,
+                {
+                    expiresIn: "1d",
+                }
+            );
+
+            res.cookie("token", newToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+                maxAge: 24 * 60 * 60 * 1000,
+            });
+        }
 
         req.user = decoded;
 
         next();
-
-    } catch (error) {
+    } catch {
         res.status(401).json({
             error: "Invalid token",
         });
