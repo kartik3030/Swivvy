@@ -1,5 +1,5 @@
 import express from "express";
-
+import limiter from "../middlewares/rateLimiting"
 import requireAuth from "../middlewares/authenticated";
 import upload from "../middlewares/upload";
 
@@ -19,7 +19,7 @@ const router = express.Router();
 
 // public routes
 router.post("/signup", handleSignup);
-router.post("/login", handleLogin);
+router.post("/login", limiter, handleLogin);
 
 // protected routes
 router.post("/logout", requireAuth, handleLogout);
