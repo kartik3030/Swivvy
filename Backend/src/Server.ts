@@ -8,7 +8,7 @@ import dns from "dns";
 import http from "http";
 import path from "path";
 
-import connectMongoDb from "./connection";
+import connectMongoDb from "./config/connection";
 import initSocket from "./config/socket";
 
 import userRoute from "./routes/user";
