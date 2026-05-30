@@ -237,7 +237,7 @@ Frontend and Backend are deployed on Render.
 
 Live Demo:
 
-https://relay-1-g5dy.onrender.com
+https://swivvy.onrender.com
 
 Repository:
 
