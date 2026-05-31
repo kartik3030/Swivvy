@@ -1,0 +1,1 @@
+{"version":3,"file":"swipe.js","sourceRoot":"","sources":["../../src/routes/swipe.ts"],"names":[],"mappings":";;;;;AAAA,sDAA8B;AAE9B,iFAAuD;AAEvD,+CAG6B;AAE7B,MAAM,MAAM,GAAG,iBAAO,CAAC,MAAM,EAAE,CAAC;AAEhC,oBAAoB;AACpB,MAAM,CAAC,IAAI,CAAC,aAAa,EAAE,uBAAW,EAAE,wBAAgB,CAAC,CAAC;AAE1D,mBAAmB;AACnB,MAAM,CAAC,IAAI,CAAC,YAAY,EAAE,uBAAW,EAAE,uBAAe,CAAC,CAAC;AAExD,kBAAe,MAAM,CAAC"}
