@@ -8,6 +8,8 @@ import { Request, Response, NextFunction } from "express";
 
 const cookieOptions = {
     httpOnly: true,
+    secure: true,
+    sameSite: "none" as const,
     path: "/",
 };
 
