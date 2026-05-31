@@ -12,7 +12,7 @@ Swivvy is a full-stack MERN application designed to help students build meaningf
 
 Users can create profiles, showcase their skills and interests, discover other students, match with like-minded people, and communicate through real-time one-to-one messaging.
 
-Swivvy 2.0 represents a major architectural upgrade from the original JavaScript version, with a complete migration of both frontend and backend codebases to TypeScript.
+Swivvy represents a major architectural upgrade from the original JavaScript version, with a complete migration of both frontend and backend codebases to TypeScript.
 
 ---
 
