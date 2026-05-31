@@ -224,6 +224,34 @@ const EditProfile = () => {
         setSuccessMsg("");
     };
 
+    const sendSkillsToLLM = async (): Promise<void> => {
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/LLM`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        skills: form.skills,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to generate bio");
+            }
+
+            const data = await response.json();
+
+            console.log(data); // later i will suggest this data
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     if (!backendData) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -347,21 +375,58 @@ const EditProfile = () => {
                         </div>
                     </div>
 
-                    {/* Bio */}
-                    <div className="flex flex-col gap-1 mb-4">
-                        <label className="text-xs text-gray-400 font-medium">Bio</label>
-                        <textarea
-                            name="bio"
-                            value={form.bio}
-                            onChange={onChange}
-                            rows={3}
+                    {/* Section: Skills */}
+                    <p className="flex items-center gap-2 text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+                        <span className="material-symbols-outlined text-[15px] text-orange-500">code</span>
+                        Skills
+                    </p>
+
+                    <div className="flex gap-2 mb-4">
+                        <input
+                            type="text"
+                            value={newSkill}
+                            onChange={(e) => setNewSkill(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNewSkill(); } }}
+                            placeholder="e.g. Figma, Python…"
                             className="
-                                bg-white/6 border border-white/12 rounded-xl
-                                text-white text-sm px-3 py-2.5 outline-none resize-none
+                                flex-1 bg-white/6 border border-white/12 rounded-xl
+                                text-white text-sm px-3 py-2.5 outline-none
                                 transition-all duration-200
                                 focus:border-orange-500/50 focus:bg-orange-500/5
                             "
                         />
+                        <button
+                            type="button"
+                            onClick={addNewSkill}
+                            className="
+                                px-5 py-2.5 rounded-xl font-bold text-sm
+                                bg-orange-500/15 border border-orange-500/30 text-orange-400
+                                hover:bg-orange-500/25 transition-colors duration-200
+                                active:scale-95
+                            "
+                        >
+                            Add
+                        </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-5 min-h-[28px]">
+                        {form.skills.map((skill, i) => (
+                            <span
+                                key={i}
+                                className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/18 text-xs font-bold
+                                    bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent"
+                            >
+                                {skill}
+                                <button
+                                    type="button"
+                                    onClick={() => removeSkill(skill)}
+                                    className="text-red-900 font-black text-sm leading-none hover:text-red-500 transition-colors"
+                                    style={{ WebkitTextFillColor: "inherit" }}
+                                >
+                                    ×
+                                </button>
+                            </span>
+                        ))}
                     </div>
 
                     {/* Email — read only */}
@@ -415,59 +480,35 @@ const EditProfile = () => {
 
                     <hr className="border-none my-5" style={{ borderTopWidth: 1, borderColor: "rgba(255,255,255,.08)" }} />
 
-                    {/* Section: Skills */}
-                    <p className="flex items-center gap-2 text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4">
-                        <span className="material-symbols-outlined text-[15px] text-orange-500">code</span>
-                        Skills
-                    </p>
 
-                    <div className="flex gap-2 mb-3">
-                        <input
-                            type="text"
-                            value={newSkill}
-                            onChange={(e) => setNewSkill(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNewSkill(); } }}
-                            placeholder="e.g. Figma, Python…"
-                            className="
-                                flex-1 bg-white/6 border border-white/12 rounded-xl
-                                text-white text-sm px-3 py-2.5 outline-none
-                                transition-all duration-200
-                                focus:border-orange-500/50 focus:bg-orange-500/5
-                            "
-                        />
-                        <button
-                            type="button"
-                            onClick={addNewSkill}
-                            className="
-                                px-5 py-2.5 rounded-xl font-bold text-sm
-                                bg-orange-500/15 border border-orange-500/30 text-orange-400
-                                hover:bg-orange-500/25 transition-colors duration-200
-                                active:scale-95
-                            "
-                        >
-                            Add
-                        </button>
-                    </div>
+                    {/* Bio */}
+                    <div className="flex flex-col gap-1 mb-4">
+                        <label className="text-xs text-gray-400 font-medium">Bio</label>
 
-                    <div className="flex flex-wrap gap-2 mb-5 min-h-[28px]">
-                        {form.skills.map((skill, i) => (
-                            <span
-                                key={i}
-                                className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/18 text-xs font-bold
-                                    bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent"
+                        <div className="relative">
+                            <textarea
+                                name="bio"
+                                value={form.bio}
+                                onChange={onChange}
+                                rows={3}
+                                className="w-full bg-white/6 border border-white/12 rounded-xl text-white text-sm px-3 py-2.5 pr-12 outline-none resize-none transition-all duration-200
+                focus:border-orange-500/50 focus:bg-orange-500/5"
+                            />
+
+                            <button
+                                type="button"
+                                onClick={sendSkillsToLLM}
+                                className="absolute bottom-3 right-2 w-7 h-7 rounded-[10px] flex items-center justify-center transition-transform hover:scale-110"
+                                style={{ background: "linear-gradient(135deg, #EA580C, #F59E0B)" }}
                             >
-                                {skill}
-                                <button
-                                    type="button"
-                                    onClick={() => removeSkill(skill)}
-                                    className="text-red-900 font-black text-sm leading-none hover:text-red-500 transition-colors"
-                                    style={{ WebkitTextFillColor: "inherit" }}
-                                >
-                                    ×
-                                </button>
-                            </span>
-                        ))}
+                                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                                    <path d="M8 2L9 6.5L13.5 8L9 9.5L8 14L7 9.5L2.5 8L7 6.5Z" fill="white" />
+                                    <path d="M12.5 2.5L12.8 3.8L14 4L12.8 4.2L12.5 5.5L12.2 4.2L11 4L12.2 3.8Z" fill="white" opacity=".7" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
+
 
                     {/* Messages */}
                     {(error || successMsg) && (

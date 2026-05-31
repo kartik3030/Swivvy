@@ -13,6 +13,7 @@ import initSocket from "./config/socket";
 
 import userRoute from "./routes/user";
 import swipeRoute from "./routes/swipe";
+import LLMRequest from "./routes/LLM"
 
 const app = express();
 
@@ -38,6 +39,7 @@ const uploadsDir = path.join(__dirname, "uploads");
 app.use("/uploads", express.static(uploadsDir));
 
 app.use("/api", userRoute);
+app.use("/api", LLMRequest)
 app.use("/api/swipe", swipeRoute);
 
 app.use(
