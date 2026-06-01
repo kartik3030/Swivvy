@@ -40,6 +40,7 @@ const EditProfile = () => {
     const [preview, setPreview] = useState<string | null>(null);
     const [newSkill, setNewSkill] = useState<string>("");
     const [fileName, setFileName] = useState<string>("");
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const [form, editForm] = useState<FormBody>({
         profilePhoto: null,
@@ -226,6 +227,8 @@ const EditProfile = () => {
 
     const sendSkillsToLLM = async (): Promise<void> => {
         try {
+            setIsGenerating(true);
+
             const response = await fetch(
                 `${import.meta.env.VITE_API_URL}/api/LLM`,
                 {
@@ -246,9 +249,14 @@ const EditProfile = () => {
 
             const data = await response.json();
 
-            console.log(data); // later i will suggest this data
+            editForm((prev) => ({
+                ...prev,
+                bio: data.bio,
+            }));
         } catch (error) {
             console.error(error);
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -506,7 +514,18 @@ const EditProfile = () => {
                                     <path d="M12.5 2.5L12.8 3.8L14 4L12.8 4.2L12.5 5.5L12.2 4.2L11 4L12.2 3.8Z" fill="white" opacity=".7" />
                                 </svg>
                             </button>
+
+                            {isGenerating && (
+                                <div className="absolute inset-0 rounded-xl bg-black/10 flex items-center px-3 text-sm text-orange-400 pointer-events-none">
+                                    <span className="animate-pulse">
+                                        Generating bio...
+                                    </span>
+                                </div>
+                            )}
+
                         </div>
+
+
                     </div>
 
 
@@ -517,6 +536,8 @@ const EditProfile = () => {
                             {successMsg && <p className="text-green-400">{successMsg}</p>}
                         </div>
                     )}
+
+
 
                     {/* Action Buttons */}
                     <div className="flex gap-3">
