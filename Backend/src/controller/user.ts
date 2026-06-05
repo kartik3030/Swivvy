@@ -2,9 +2,14 @@ import User from "../models/user";
 import Message from "../models/messages";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+const nodemailer = require("nodemailer");
 import cloudinary from "../config/cloudinary";
+
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
+import { resetPasswordTemplate } from "../utils/reset-password";
 import { Request, Response, NextFunction } from "express";
+import transporter from "../config/Email-services";
+
 
 const cookieOptions = {
     httpOnly: true,
@@ -367,6 +372,34 @@ const handleGetMessage = async (
     }
 };
 
+const handleForgotPassword = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new Error("No user found");
+    }
+
+    try {
+        const info = await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: "Reset Your Password",
+            text: `You requested a password reset. If you didn't request this, you can safely ignore this email.`,
+            html: resetPasswordTemplate(email),
+        });
+
+        res.json("Email Sent")
+
+    } catch (err) {
+        console.error("Error while sending mail:", err);
+    }
+};
+
 export {
     handleSignup,
     handleLogin,
@@ -377,4 +410,5 @@ export {
     getMatches,
     getCurrentUser,
     handleGetMessage,
+    handleForgotPassword
 };
