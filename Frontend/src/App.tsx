@@ -7,6 +7,7 @@ import ExplorePage from "./views/Explore";
 import ProfilePage from "./views/Profile";
 import EditProfile from "./views/EditProfile";
 import ChatPage from "./views/Chat";
+import ResetPassword from "./views/Reset-Password"
 
 import IsAuthN from "./component/IsAuthN";
 import ProtectedRoute from "./component/ProtectedRoute";
@@ -20,6 +21,10 @@ const App = () => {
         <Route path="/landing" element={<Landing />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route
+          path="/reset-password/:token"
+          element={<ResetPassword />}
+        />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/explore" element={<ExplorePage />} />
