@@ -14,7 +14,8 @@ import {
     getMatches,
     getCurrentUser,
     handleGetMessage,
-    handleForgotPassword
+    handleForgotPassword,
+    handleResetPassword
 } from "../controller/user";
 
 const router = express.Router();
@@ -23,6 +24,11 @@ const router = express.Router();
 router.post("/signup", handleSignup);
 router.post("/login", limiter, handleLogin);
 router.post("/forgot-password", handleForgotPassword)
+router.put(
+    "/reset-password",
+    handleResetPassword
+);
+
 
 // protected routes
 router.post("/logout", requireAuth, handleLogout);
@@ -34,6 +40,7 @@ router.put(
     upload.single("profilePhoto"),
     editProfile
 );
+
 
 router.delete("/deleteAccount", requireAuth, deleteAccount);
 router.get("/matches", requireAuth, getMatches);

@@ -384,19 +384,88 @@ const handleForgotPassword = async (
         throw new Error("No user found");
     }
 
+    //sending this token to authenticate the actual user
+    const token = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" }
+    );
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${token}`;
+
     try {
         const info = await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: email,
             subject: "Reset Your Password",
             text: `You requested a password reset. If you didn't request this, you can safely ignore this email.`,
-            html: resetPasswordTemplate(email),
+            html: resetPasswordTemplate(email, resetUrl),
         });
 
-        res.json("Email Sent")
-
+        res.json("Email Sent");
     } catch (err) {
         console.error("Error while sending mail:", err);
+        res.status(500).json("Failed to send email");
+    }
+};
+
+
+const handleResetPassword = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const { token, password } = req.body;
+
+        if (!token || !password) {
+            return res.status(400).json({
+                message: "Token and password are required",
+            });
+        }
+
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET as string
+        ) as {
+            userId: string;
+        };
+
+        const user = await User.findById(decoded.userId);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        user.password = hashedPassword;
+
+        await user.save();
+
+        return res.status(200).json({
+            message: "Password reset successful",
+        });
+
+    } catch (error) {
+        if (error instanceof jwt.TokenExpiredError) {
+            return res.status(401).json({
+                message: "Reset link has expired",
+            });
+        }
+
+        if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(401).json({
+                message: "Invalid reset token",
+            });
+        }
+
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Something went wrong",
+        });
     }
 };
 
@@ -410,5 +479,6 @@ export {
     getMatches,
     getCurrentUser,
     handleGetMessage,
-    handleForgotPassword
+    handleForgotPassword,
+    handleResetPassword
 };
