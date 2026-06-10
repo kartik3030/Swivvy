@@ -1,5 +1,6 @@
 import express from "express";
 import passport from "../config/Google-OAuth";
+import { handleGoogleAuth } from "../controller/user";
 const router = express.Router()
 
 router.get(
@@ -11,11 +12,8 @@ router.get(
 
 router.get(
     "/google/callback",
-    passport.authenticate("google", {
-        session: false,
-    }),
-    (req, res) => {
-        res.redirect("http://localhost:5173");
-    }
+    passport.authenticate("google", { session: false }),
+    handleGoogleAuth
 );
+
 export default router
