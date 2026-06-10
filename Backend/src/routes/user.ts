@@ -3,7 +3,6 @@ import limiter from "../middlewares/rateLimiting"
 import requireAuth from "../middlewares/authenticated";
 import upload from "../middlewares/upload";
 
-
 import {
     handleSignup,
     handleLogin,
@@ -15,7 +14,7 @@ import {
     getCurrentUser,
     handleGetMessage,
     handleForgotPassword,
-    handleResetPassword
+    handleResetPassword,
 } from "../controller/user";
 
 const router = express.Router();
@@ -28,7 +27,6 @@ router.put(
     "/reset-password",
     handleResetPassword
 );
-
 
 // protected routes
 router.post("/logout", requireAuth, handleLogout);
