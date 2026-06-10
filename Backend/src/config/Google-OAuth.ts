@@ -1,4 +1,5 @@
 import passport from "passport";
+import User from "../models/user";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
 passport.use(
@@ -9,7 +10,23 @@ passport.use(
             callbackURL: "http://localhost:3000/auth/google/callback",
         },
         async (accessToken, refreshToken, profile, done) => {
-            return done(null, profile);
+
+            const email = profile.emails?.[0]?.value;
+
+            let user = await User.findOne({ email });
+
+            if (!user) {
+                const names = profile.displayName.split(" ");
+
+                user = await User.create({
+                    FName: names[0] || "",
+                    LName: names.slice(1).join(" ") || "",
+                    email,
+                    googleId: profile.id,
+                });
+            }
+
+            done(null, user);
         }
     )
 );

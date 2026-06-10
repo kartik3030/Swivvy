@@ -170,6 +170,27 @@ const handleLogin = async (
     }
 };
 
+const handleGoogleAuth = async (req: Request, res: Response) => {
+    const user = (req as any).user;
+
+    const token = jwt.sign(
+        {
+            id: user._id,
+            email: user.email,
+        },
+        process.env.JWT_SECRET!,
+        {
+            expiresIn: "1d",
+        }
+    );
+
+    res.cookie("token", token, cookieOptions);
+
+    //fronend url
+    res.redirect("http://localhost:5173/explore");
+}
+
+
 // logout controller
 const handleLogout = (req: Request, res: Response): void => {
     res.clearCookie("token", cookieOptions);
@@ -481,4 +502,5 @@ export {
     handleGetMessage,
     handleForgotPassword,
     handleResetPassword,
+    handleGoogleAuth
 };

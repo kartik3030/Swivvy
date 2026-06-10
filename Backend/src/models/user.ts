@@ -1,10 +1,16 @@
-import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import mongoose, {
+    Schema,
+    Document,
+    Model,
+    Types,
+} from "mongoose";
 
 export interface IUser extends Document {
     FName: string;
     LName: string;
     email: string;
     password: string;
+    googleId: string;
     country: string;
     bio: string;
     skills: string[];
@@ -43,7 +49,12 @@ const userSchema = new Schema<IUser>(
 
         password: {
             type: String,
-            required: true,
+            default: "",
+        },
+
+        googleId: {
+            type: String,
+            default: "",
         },
 
         country: {
