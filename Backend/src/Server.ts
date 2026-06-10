@@ -11,6 +11,7 @@ import path from "path";
 import connectMongoDb from "./config/connection";
 import initSocket from "./config/socket";
 
+import googleAuth from "./routes/google-oauth"
 import userRoute from "./routes/user";
 import swipeRoute from "./routes/swipe";
 import LLMRequest from "./routes/LLM"
@@ -38,6 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 const uploadsDir = path.join(__dirname, "uploads");
 app.use("/uploads", express.static(uploadsDir));
 
+app.use("/auth", googleAuth)
 app.use("/api", userRoute);
 app.use("/api", LLMRequest)
 app.use("/api/swipe", swipeRoute);

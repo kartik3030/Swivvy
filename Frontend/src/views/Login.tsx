@@ -401,15 +401,22 @@ const Login = (): React.ReactElement => {
                         </div>
 
                         {/* Social stubs */}
-                        <div style={{ display: 'flex', gap: '0.75rem', animation: 'fadeUp 0.7s 0.6s both' }}>
-                            {[{ icon: 'G', label: 'Google', color: '#ea4335' }, { icon: 'GH', label: 'GitHub', color: '#aaa' }].map(({ icon, label, color }) => (
-                                <button key={label} style={{
-                                    flex: 1, padding: '0.75rem', borderRadius: 12,
-                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-                                    color: '#aaa', fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem',
-                                    fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center',
-                                    justifyContent: 'center', gap: 8, transition: 'border-color 0.25s, background 0.25s, transform 0.2s',
-                                }}
+                        <div
+                            style={{ display: 'flex', gap: '0.75rem', animation: 'fadeUp 0.7s 0.6s both' }}>
+                            {[{ icon: 'G', label: 'Google', color: '#ea4335' }].map(({ icon, label, color }) => (
+                                <button
+                                    key={label}
+                                    onClick={() => {
+                                        window.location.href =
+                                            `${import.meta.env.VITE_API_URL}/auth/google`;
+                                    }}
+                                    style={{
+                                        flex: 1, padding: '0.75rem', borderRadius: 12,
+                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                                        color: '#aaa', fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem',
+                                        fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                        justifyContent: 'center', gap: 8, transition: 'border-color 0.25s, background 0.25s, transform 0.2s',
+                                    }}
                                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'none' }}
                                 >

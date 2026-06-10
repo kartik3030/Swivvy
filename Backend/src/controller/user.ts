@@ -480,5 +480,5 @@ export {
     getCurrentUser,
     handleGetMessage,
     handleForgotPassword,
-    handleResetPassword
+    handleResetPassword,
 };
