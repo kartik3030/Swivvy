@@ -1,4 +1,4 @@
-# Swivvy 2.0
+# Swivvy 
 
 A production-grade social networking platform built for students to discover, connect, and interact with people who share similar interests, skills, and educational backgrounds.
 
