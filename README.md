@@ -1,8 +1,22 @@
-# Swivvy 
+# Swivvy 2.0
 
 A production-grade social networking platform built for students to discover, connect, and interact with people who share similar interests, skills, and educational backgrounds.
 
-Swivvy combines swipe-based matching, real-time messaging, secure authentication, and modern full-stack architecture to create a networking experience inspired by Tinder while focusing on friendship-building and student communities.
+Swivvy combines swipe-based matching, real-time messaging, secure authentication, AI-powered profile enhancements, and modern full-stack architecture to create a networking experience inspired by Tinder while focusing on friendship-building and student communities.
+
+---
+
+## Highlights
+
+* Full migration from JavaScript to TypeScript
+* MVC-based backend architecture
+* Dockerized frontend and backend services
+* JWT + Refresh Token authentication
+* Google OAuth 2.0 integration
+* Real-time messaging with Socket.IO
+* Cloudinary media management
+* AI-powered bio generation
+* Production deployment on Render
 
 ---
 
@@ -12,7 +26,7 @@ Swivvy is a full-stack MERN application designed to help students build meaningf
 
 Users can create profiles, showcase their skills and interests, discover other students, match with like-minded people, and communicate through real-time one-to-one messaging.
 
-Swivvy represents a major architectural upgrade from the original JavaScript version, with a complete migration of both frontend and backend codebases to TypeScript.
+Swivvy 2.0 represents a major architectural upgrade from the original version, featuring a complete migration of both frontend and backend codebases to TypeScript, improved project structure, enhanced authentication systems, AI-powered profile assistance, and Dockerized deployment.
 
 ---
 
@@ -39,9 +53,11 @@ One of the major goals of this version was improving maintainability, scalabilit
 * JWT Authentication
 * Access Token + Refresh Token Flow
 * Refresh Token Rotation
+* Google OAuth 2.0 Authentication
 * HTTP-only Secure Cookies
 * Protected Routes
 * Persistent Authentication Sessions
+* Password Reset Functionality
 
 ### Matching System
 
@@ -57,6 +73,10 @@ One of the major goals of this version was improving maintainability, scalabilit
 * Instant message delivery
 * Match-based chat access
 
+### AI Features
+
+* AI Bio Suggestions
+
 ### Profile Management
 
 * Profile Picture Upload
@@ -67,17 +87,26 @@ One of the major goals of this version was improving maintainability, scalabilit
 ### Cloud Storage
 
 * Cloudinary Integration
-* Cloud-based profile image storage
-* Optimized media delivery
+* Optimized Image Uploads
+* Cloud-Based Media Management
 
 ### Security
 
 * Password Hashing with bcrypt
+* Refresh Token Rotation
 * Rate Limiting
-* Protected APIs
 * Input Validation
+* Protected APIs
 * CORS Configuration
 * HTTP-only Cookie Authentication
+* Password Reset Security
+
+### DevOps & Deployment
+
+* Dockerized Frontend & Backend
+* Docker Hub Image Distribution
+* Containerized Development Environment
+* Render Deployment
 
 ---
 
@@ -103,9 +132,15 @@ One of the major goals of this version was improving maintainability, scalabilit
 * JWT
 * bcrypt
 
+### AI
+
+* OpenAI API
+
 ### Cloud & Deployment
 
 * Cloudinary
+* Docker
+* Docker Hub
 * Render
 
 ---
@@ -157,12 +192,12 @@ src/
 
 Stores:
 
-* User information
+* User Information
+* Authentication Data
 * Bio
 * Skills
 * Interests
 * Profile Images
-* Authentication Data
 
 #### Messages
 
@@ -173,6 +208,14 @@ Stores:
 * Chat Messages
 * Message Timestamps
 
+#### Matches
+
+Stores:
+
+* User Match Information
+* Match Relationships
+* Match Creation Timestamps
+
 ---
 
 ## Matching Flow
@@ -182,7 +225,7 @@ Stores:
 3. Swipe event triggers backend API.
 4. Match is created when both users swipe right.
 5. Chat access is automatically unlocked.
-6. Users can communicate through Socket.IO powered messaging.
+6. Users communicate through Socket.IO powered messaging.
 
 ---
 
@@ -217,17 +260,89 @@ npm run dev
 ### Backend
 
 ```env
-PORT=
-MONGO_URI=
+PORT=3000
 
-JWT_SECRET=
+MONGO_URI=<your_mongodb_connection_string>
 
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
+JWT_SECRET=<your_jwt_secret>
 
-CLIENT_URL=
+CLIENT_URL=http://localhost:5173
+
+NODE_ENV=development
+
+CLOUDINARY_CLOUD_NAME=<your_cloudinary_cloud_name>
+CLOUDINARY_API_KEY=<your_cloudinary_api_key>
+CLOUDINARY_API_SECRET=<your_cloudinary_api_secret>
+
+GEMINI_API_KEY=<your_gemini_api_key>
+
+EMAIL_USER=<your_email_address>
+EMAIL_APP_PASSWORD=<your_email_app_password>
+
+GOOGLE_CLIENT_ID=<your_google_client_id>
+GOOGLE_CLIENT_SECRET=<your_google_client_secret>
 ```
+
+### Frontend
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+
+---
+
+## Docker
+
+Swivvy is fully containerized using Docker for consistent local development and deployment.
+
+### Pull Images
+
+#### Frontend
+
+```bash
+docker pull kartik3030/swivvy-frontend:v1
+```
+
+#### Backend
+
+```bash
+docker pull kartik3030/swivvy-backend:v1
+```
+
+### Run Backend
+
+```bash
+docker run --env-file .env -p 5000:5000 kartik3030/swivvy-backend:v1
+```
+
+### Run Frontend
+
+```bash
+docker run -p 3000:3000 kartik3030/swivvy-frontend:v1
+```
+
+### Build Locally
+
+#### Backend
+
+```bash
+docker build -t swivvy-backend .
+```
+
+#### Frontend
+
+```bash
+docker build -t swivvy-frontend .
+```
+
+### Benefits
+
+* Consistent development and production environments
+* Simplified deployment process
+* Portable application packaging
+* Faster onboarding for contributors
+* Improved infrastructure management
 
 ---
 
@@ -235,11 +350,25 @@ CLIENT_URL=
 
 Frontend and Backend are deployed on Render.
 
-Live Demo:
+### Live Demo
 
 https://swivvy.onrender.com
 
-Repository:
+### Docker Hub
+
+#### Backend
+
+```bash
+docker pull kartik3030/swivvy-backend:v1
+```
+
+#### Frontend
+
+```bash
+docker pull kartik3030/swivvy-frontend:v1
+```
+
+### Repository
 
 https://github.com/kartik3030/Swivvy
 
@@ -247,35 +376,61 @@ https://github.com/kartik3030/Swivvy
 
 ## Security Highlights
 
-* Refresh Token Authentication
-* HTTP-only Cookies
-* Password Hashing
-* Rate Limiting
-* Protected Routes
+* JWT Authentication
+* Refresh Token Rotation
+* Secure HTTP-only Cookies
+* Password Hashing with bcrypt
+* Password Reset Protection
+* OAuth 2.0 Authentication
 * Input Validation
 * CORS Protection
+* Rate Limiting
 
 ---
 
 ## Future Roadmap
 
-* Google OAuth Authentication
-* Password Reset Functionality
+### Security
+
+* End-to-End Encryption for Chat
+
+### Frontend
+
 * Skeleton Loading Screens
-* Docker Support
-* CI/CD Pipeline
-* AI Bio Suggestions
+* Shuffled Profiles UI
+
+### AI Features
+
 * AI Opening Message Suggestions
-* Advanced User Discovery Filters
+
+### DevOps
+
+* CI/CD Pipeline
+* AWS Deployment
+* Nginx Reverse Proxy
+* PM2 Process Management
+* Custom Domain & SSL
+
+### Scalability
+
+* Redis Caching
+* Load Balancer
+
+### Real-Time Features
+
 * Real-Time Presence Indicators
 * Typing Indicators
+
+### Discovery
+
+* Advanced User Discovery Filters
 
 ---
 
 ## Author
 
-Kartik
+### Kartik
 
 Computer Science Student | Full-Stack Developer
 
-Focused on scalable web applications, TypeScript architecture, real-time systems, and modern full-stack development.
+Focused on scalable web applications, TypeScript architecture, real-time systems, DevOps, AI integrations, and modern full-stack development.
