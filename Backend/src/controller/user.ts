@@ -187,7 +187,7 @@ const handleGoogleAuth = async (req: Request, res: Response) => {
     res.cookie("token", token, cookieOptions);
 
     //fronend url
-    res.redirect("http://localhost:5173/explore");
+    res.redirect(`${process.env.CLIENT_URL}/explore`);
 }
 
 
