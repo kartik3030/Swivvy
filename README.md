@@ -281,6 +281,8 @@ EMAIL_APP_PASSWORD=<your_email_app_password>
 
 GOOGLE_CLIENT_ID=<your_google_client_id>
 GOOGLE_CLIENT_SECRET=<your_google_client_secret>
+
+BACKEND_URL=<your_backend_URL>
 ```
 
 ### Frontend
