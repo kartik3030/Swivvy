@@ -27,7 +27,17 @@ const IsAuthN = () => {
         checkAuth();
     }, []);
 
-    if (loading) return null;
+    if (loading) return (
+        <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+      @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
+    `}</style>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '5rem', letterSpacing: '0.02em', color: '#7f1d1d', animation: 'pulse 2s ease-in-out infinite' }}>
+                SWIVVY
+            </span>
+        </div>
+    )
 
     return isAuth ? (
         <Navigate to="/explore" replace />
