@@ -610,7 +610,7 @@ const ExplorePage = (): React.ReactElement => {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="ep-action-bar">
+                    <div className="ep-action-bar ">
 
                         {/* Reject */}
                         <button

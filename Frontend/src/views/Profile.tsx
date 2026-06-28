@@ -145,8 +145,8 @@ const ProfilePage = (): React.ReactElement | null => {
                     <div className="relative flex-shrink-0">
                         <img
                             src={resolveImage(backendData.profilePhoto)}
-                            alt="profile"
-                            className="w-60 h-80 rounded-[14px] object-cover block"
+                            alt="Profile preview"
+                            className="w-30 h-[200px] rounded-[14px] object-cover block"
                         />
                         {/* Gradient overlay on avatar */}
                         <div className="absolute inset-0 rounded-[14px] bg-gradient-to-b from-transparent via-transparent to-black/50 pointer-events-none" />
@@ -169,28 +169,7 @@ const ProfilePage = (): React.ReactElement | null => {
                             {backendData.bio}
                         </p>
 
-                        <p className="text-[11px] font-bold text-red-900 uppercase tracking-widest mb-2">
-                            Top Skills
-                        </p>
 
-                        <div className="flex gap-2 flex-wrap">
-                            {backendData.skills?.slice(0, 6).map((s, i) => (
-                                <span
-                                    key={i}
-                                    className="
-                                        px-3 py-1 rounded-full border border-white/20 text-xs font-bold
-                                        bg-gradient-to-r from-orange-500 to-orange-700
-                                        bg-clip-text text-transparent
-                                        transition-transform duration-150 hover:scale-105
-                                    "
-                                    style={{
-                                        animation: `fadeUp .4s ${0.05 * i + 0.25}s cubic-bezier(.22,.68,0,1.2) both`,
-                                    }}
-                                >
-                                    {s}
-                                </span>
-                            ))}
-                        </div>
                     </div>
                 </div>
 
