@@ -640,7 +640,7 @@ const ExplorePage = (): React.ReactElement => {
 
                         {/* Chat — mobile only */}
                         <button
-                            onClick={() => window.location.assign("/chatPage")}
+                            onClick={() => navigate("/chatPage")}
                             className="ep-btn ep-btn-chat"
                             aria-label="Open chat"
                         >

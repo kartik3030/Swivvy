@@ -302,7 +302,7 @@ const EditProfile = () => {
                         <img
                             src={preview || resolveImage(backendData.profilePhoto)}
                             alt="Profile preview"
-                            className="w-24 h-[116px] rounded-[14px] object-cover block"
+                            className="w-24 h-[200px] rounded-[14px] object-cover block"
                         />
                         <div className="absolute inset-0 rounded-[14px] bg-gradient-to-b from-transparent via-transparent to-black/50 pointer-events-none" />
 
