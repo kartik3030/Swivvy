@@ -576,7 +576,7 @@ const Landing = () => {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', marginTop: '3rem', flexWrap: 'wrap' }}>
-                    {[['12K+', 'Active Users'], ['80+', 'Countries'], ['500+', 'Skills'], ['98%', 'Match Rate']].map(([num, lbl]) => (
+                    {[['1k+', 'Users'], ['50+', 'Skills'], ['98%', 'Match Rate']].map(([num, lbl]) => (
                         <div key={lbl} style={{ textAlign: 'center' }}>
                             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '2.5rem', color: '#f97316', letterSpacing: '0.05em' }}>{num}</div>
                             <div style={{ color: '#555', fontSize: '0.8rem', marginTop: 2 }}>{lbl}</div>

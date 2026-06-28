@@ -1,4 +1,4 @@
-export const resetPasswordTemplate = (email, resetUrl) => {
+export const resetPasswordTemplate = (email: String, resetUrl: String) => {
     return `
     <!DOCTYPE html>
     <html lang="en">
