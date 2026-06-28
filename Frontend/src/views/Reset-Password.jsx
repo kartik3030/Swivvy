@@ -26,6 +26,7 @@ const ResetPassword = () => {
                 `${import.meta.env.VITE_API_URL}/api/reset-password`,
                 {
                     method: "PUT",
+                    credentials: "include",
                     headers: {
                         "Content-Type": "application/json",
                     },
