@@ -35,23 +35,23 @@ const injectStyles = (): void => {
     s.textContent = `
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
-        .sc-root {
-            position: relative;
-            margin-top: 16px;
-            width: 100%;
-            max-width: 420px;
-            height: 72vh;
-            max-height: 600px;
-            border-radius: 22px;
-            overflow: hidden;
-            user-select: none;
-            touch-action: pan-y;
-            cursor: grab;
-            font-family: 'DM Sans', sans-serif;
-            transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-                        box-shadow 0.25s ease;
-            will-change: transform;
-        }
+      .sc-root {
+    position: relative;
+    margin-top: 2px;
+    width: 100%;
+    max-width: 420px;
+    height: 70vh;
+    max-height: 600px;
+    border-radius: 22px;
+    overflow: hidden;
+    user-select: none;
+    touch-action: pan-y;
+    cursor: grab;
+    font-family: 'DM Sans', sans-serif;
+    transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 0.25s ease;
+    will-change: transform;
+}
 
         .sc-root:active {
             cursor: grabbing;

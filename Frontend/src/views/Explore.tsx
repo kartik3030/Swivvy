@@ -606,7 +606,7 @@ const ExplorePage = (): React.ReactElement => {
 
                 </main>
                 {/* Action buttons */}
-                <div className="ep-action-bar fixed bottom-0 ">
+                <div className="ep-action-bar fixed bottom-2 ">
 
                     {/* Reject */}
                     <button
