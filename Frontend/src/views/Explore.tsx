@@ -416,40 +416,32 @@ const ExplorePage = (): React.ReactElement => {
     }, [navigate]);
 
     /* ── Fetch users ── */
+    const fetchUsers = async (): Promise<void> => {
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/feed`,
+                {
+                    credentials: "include",
+                }
+            );
+
+            if (!res.ok) {
+                throw new Error("Failed to fetch users");
+            }
+
+            const data: User[] = await res.json();
+
+            setUsers(Array.isArray(data) ? data : []);
+            setCurrentIndex(0);
+        } catch (err) {
+            console.error("Fetch users error:", err);
+        }
+    };
+
     useEffect(() => {
         if (!user) return;
 
-        let cancelled = false;
-
-        const fetchUsers = async (): Promise<void> => {
-            try {
-                const res = await fetch(
-                    `${import.meta.env.VITE_API_URL}/api/feed`,
-                    {
-                        credentials: "include",
-                    }
-                );
-
-                if (!res.ok) {
-                    throw new Error("Failed to fetch users");
-                }
-
-                const data: User[] = await res.json();
-
-                if (!cancelled) {
-                    setUsers(Array.isArray(data) ? data : []);
-                    setCurrentIndex(0);
-                }
-            } catch (err) {
-                console.error("Fetch users error:", err);
-            }
-        };
-
         fetchUsers();
-
-        return () => {
-            cancelled = true;
-        };
     }, [user]);
 
     const currentUser: User | null =
@@ -459,16 +451,18 @@ const ExplorePage = (): React.ReactElement => {
 
     /* ── Helpers ── */
     const moveToNext = (): void => {
-        setCurrentIndex((prev) =>
-            prev + 1 >= users.length ? prev : prev + 1
-        );
+        if (currentIndex + 1 >= users.length) {
+            fetchUsers(); // Fetch a new random batch from the backend
+            return;
+        }
+
+        setCurrentIndex((prev) => prev + 1);
     };
 
     const closeMatch = (): void => {
         setMatchedUser(null);
         moveToNext();
     };
-
     /* ── Right swipe ── */
     const handleRightSwipe = async (): Promise<void> => {
         if (!currentUser || swipeLock.current) return;
@@ -583,7 +577,7 @@ const ExplorePage = (): React.ReactElement => {
                 <div className="ep-aside"><Aside /></div>
 
                 {/* Centre: card + buttons */}
-                <main className="ep-main">
+                <main className="ep-main ">
 
                     {/* Card stage with directional hint overlays */}
                     <div className={`ep-stage${swipeDir ? ` ep-swiping-${swipeDir}` : ""}`}>
@@ -609,49 +603,49 @@ const ExplorePage = (): React.ReactElement => {
                         )}
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="ep-action-bar ">
 
-                        {/* Reject */}
-                        <button
-                            ref={rejectRef}
-                            onClick={handleLeftSwipe}
-                            disabled={!currentUser || isSwiping}
-                            className="ep-btn ep-btn-reject"
-                            aria-label="Pass"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="32" height="32" fill="#7F1D1D">
-                                <path d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z" />
-                            </svg>
-                        </button>
-
-                        {/* Accept */}
-                        <button
-                            ref={acceptRef}
-                            onClick={handleRightSwipe}
-                            disabled={!currentUser || isSwiping}
-                            className="ep-btn ep-btn-accept"
-                            aria-label="Like"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="36" height="36" fill="#15803D">
-                                <path d="M378-246 154-470l43-43 181 181 384-384 43 43-427 427Z" />
-                            </svg>
-                        </button>
-
-                        {/* Chat — mobile only */}
-                        <button
-                            onClick={() => navigate("/chatPage")}
-                            className="ep-btn ep-btn-chat"
-                            aria-label="Open chat"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="22" height="22" fill="#FACC15">
-                                <path d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Z" />
-                            </svg>
-                        </button>
-
-                    </div>
                 </main>
+                {/* Action buttons */}
+                <div className="ep-action-bar fixed bottom-0 ">
 
+                    {/* Reject */}
+                    <button
+                        ref={rejectRef}
+                        onClick={handleLeftSwipe}
+                        disabled={!currentUser || isSwiping}
+                        className="ep-btn ep-btn-reject"
+                        aria-label="Pass"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="32" height="32" fill="#7F1D1D">
+                            <path d="m249-207-42-42 231-231-231-231 42-42 231 231 231-231 42 42-231 231 231 231-42 42-231-231-231 231Z" />
+                        </svg>
+                    </button>
+
+                    {/* Accept */}
+                    <button
+                        ref={acceptRef}
+                        onClick={handleRightSwipe}
+                        disabled={!currentUser || isSwiping}
+                        className="ep-btn ep-btn-accept"
+                        aria-label="Like"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="36" height="36" fill="#15803D">
+                            <path d="M378-246 154-470l43-43 181 181 384-384 43 43-427 427Z" />
+                        </svg>
+                    </button>
+
+                    {/* Chat — mobile only */}
+                    <button
+                        onClick={() => navigate("/chatPage")}
+                        className="ep-btn ep-btn-chat"
+                        aria-label="Open chat"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="22" height="22" fill="#FACC15">
+                            <path d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Z" />
+                        </svg>
+                    </button>
+
+                </div>
                 {/* Right: Chat */}
                 <div className="ep-chat"><Chat /></div>
 
